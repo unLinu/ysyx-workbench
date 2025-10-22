@@ -18,13 +18,13 @@ sim:
 	@mkdir -p $(OBJ_DIR)
 ifdef FST
 	@$(SIMULATOR) $(CFLAGS) --trace-fst -CFLAGS "-DFST" \
-	 csrc/tb_$(TOP_MODULE).cpp vsrc/$(TOP_MODULE).v
+	 csrc/tb_$(TOP_MODULE).cpp vsrc/*.v
 	@$(OBJ_DIR)/V$(TOP_MODULE) > /dev/null
 	@echo "Simulation with FST trace completed."
 	@gtkwave $(OBJ_DIR)/simx.fst
 else
 	@$(SIMULATOR) $(CFLAGS) --trace-vcd \
-	 csrc/tb_$(TOP_MODULE).cpp vsrc/$(TOP_MODULE).v
+	 csrc/tb_$(TOP_MODULE).cpp vsrc/*.v
 	@$(OBJ_DIR)/V$(TOP_MODULE) > /dev/null
 	@echo "Simulation with VCD trace completed."
 	@gtkwave $(OBJ_DIR)/simx.vcd
@@ -33,6 +33,10 @@ endif
 ### NVBoard 
 
 $(shell mkdir -p $(BUILD_DIR))
+
+ifdef SEQ_LOGIC
+NVBOARD_CFLAGS += --CFLAGS "-DSEQ_LOGIC"
+endif
 
 # constraint file
 SRC_AUTO_BIND = $(abspath $(BUILD_DIR)/auto_bind.cpp)

@@ -1,14 +1,21 @@
 module top (
-        input   wire            clk,
-        input   wire            rst,
-        output  wire    [15:0]  led
+        input   wire    [1:0]   Y,
+        input   wire    [1:0]   X0,
+        input   wire    [1:0]   X1,
+        input   wire    [1:0]   X2,
+        input   wire    [1:0]   X3,
+        output  reg     [1:0]   F
     );
-    // output declaration of module light
 
-    light u_light(
-              .clk 	(clk  ),
-              .rst 	(rst  ),
-              .led 	(led  )
-          );
+
+    mux4to1 u_mux4to1(
+                .Y  	(Y   ),
+                .X0 	(X0  ),
+                .X1 	(X1  ),
+                .X2 	(X2  ),
+                .X3 	(X3  ),
+                .F  	(F   )
+            );
+
 
 endmodule

@@ -30,14 +30,22 @@ int main(int argc, char **argv)
     while (contextp->time() < sim_time && !contextp->gotFinish())
     {
         contextp->timeInc(1);
-        int a = rand() & 1;
-        int b = rand() & 1;
-        top->a = a;
-        top->b = b;
+        /* user simulation start */
+        int Y = rand() % 4;
+        int X0 = rand() % 4;
+        int X1 = rand() % 4;
+        int X2 = rand() % 4;
+        int X3 = rand() % 4;
+        top->X0 = X0;
+        top->X1 = X1;
+        top->X2 = X2;
+        top->X3 = X3;
+        top->Y = Y;
         top->eval();
         tfp->dump(contextp->time());
-        printf("a = %d, b = %d, f = %d\n", a, b, top->f);
-        assert(top->f == (a ^ b));
+        printf("X0 = %d, X1 = %d, X2 = %d, X3 = %d, Y = %d, F = %d\n", X0, X1, X2, X3, Y, top->F);
+        assert(top->F == ((Y == 0) ? X0 : (Y == 1) ? X1 : (Y == 2) ? X2 : X3));
+        /* user simulation end */
     }
     tfp->close();
     delete tfp;
