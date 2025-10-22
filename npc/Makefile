@@ -1,25 +1,31 @@
 # Variables
 SIMULATOR = verilator
 TOP_MODULE = top
-CFLAGS = --cc --exe --build -j 0 -Wall --top-module $(TOP_MODULE)
+BUILD_DIR = build
+OBJ_DIR = $(BUILD_DIR)/obj_dir
+CFLAGS = --cc --exe --build -j 0 -Wall --top-module $(TOP_MODULE) --Mdir $(OBJ_DIR)
 
 all:
 	@echo "Write this Makefile by your self."
 
 sim:
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
+	@mkdir -p $(OBJ_DIR)
 ifdef FST
-	@cd vsrc && $(SIMULATOR) $(CFLAGS) --trace-fst -CFLAGS "-DFST" \
-	 *.cpp *.v
-	@cd vsrc && ./obj_dir/V$(TOP_MODULE) > /dev/null
+	@$(SIMULATOR) $(CFLAGS) --trace-fst -CFLAGS "-DFST" \
+	 csrc/tb_$(TOP_MODULE).cpp vsrc/$(TOP_MODULE).v
+	@$(OBJ_DIR)/V$(TOP_MODULE) > /dev/null
 	@echo "Simulation with FST trace completed."
-	@gtkwave vsrc/obj_dir/simx.fst
+	@gtkwave $(OBJ_DIR)/simx.fst
 else
-	@cd vsrc && $(SIMULATOR) $(CFLAGS) --trace-vcd \
-	 *.cpp *.v
-	@cd vsrc && ./obj_dir/V$(TOP_MODULE) > /dev/null
+	@$(SIMULATOR) $(CFLAGS) --trace-vcd \
+	 csrc/tb_$(TOP_MODULE).cpp vsrc/$(TOP_MODULE).v
+	@$(OBJ_DIR)/V$(TOP_MODULE) > /dev/null
 	@echo "Simulation with VCD trace completed."
-	@gtkwave vsrc/obj_dir/simx.vcd
+	@gtkwave $(OBJ_DIR)/simx.vcd
 endif
+
+clean:
+	@rm -rf $(BUILD_DIR)
 
 include ../Makefile
