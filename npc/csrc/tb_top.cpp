@@ -31,20 +31,11 @@ int main(int argc, char **argv)
     {
         contextp->timeInc(1);
         /* user simulation start */
-        int Y = rand() % 4;
-        int X0 = rand() % 4;
-        int X1 = rand() % 4;
-        int X2 = rand() % 4;
-        int X3 = rand() % 4;
-        top->X0 = X0;
-        top->X1 = X1;
-        top->X2 = X2;
-        top->X3 = X3;
-        top->Y = Y;
+        int in = rand() % 256;
+        top->in = in;
         top->eval();
         tfp->dump(contextp->time());
-        printf("X0 = %d, X1 = %d, X2 = %d, X3 = %d, Y = %d, F = %d\n", X0, X1, X2, X3, Y, top->F);
-        assert(top->F == ((Y == 0) ? X0 : (Y == 1) ? X1 : (Y == 2) ? X2 : X3));
+        printf("in = %d, valid = %d, led = %d, seg = %d\n", in, top->valid, top->led, top->seg);
         /* user simulation end */
     }
     tfp->close();

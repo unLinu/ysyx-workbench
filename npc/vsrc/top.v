@@ -1,21 +1,15 @@
 module top (
-        input   wire    [1:0]   Y,
-        input   wire    [1:0]   X0,
-        input   wire    [1:0]   X1,
-        input   wire    [1:0]   X2,
-        input   wire    [1:0]   X3,
-        output  reg     [1:0]   F
+        input   wire    [7:0]   in,
+        output  wire            valid,  // 是否有输入
+        output  reg     [2:0]   led,
+        output  reg     [7:0]   seg
     );
 
-
-    mux4to1 u_mux4to1(
-                .Y  	(Y   ),
-                .X0 	(X0  ),
-                .X1 	(X1  ),
-                .X2 	(X2  ),
-                .X3 	(X3  ),
-                .F  	(F   )
+    encoder u_encoder(
+                .in    	(in     ),
+                .valid 	(valid  ),
+                .led   	(led    ),
+                .seg   	(seg    )
             );
-
 
 endmodule
