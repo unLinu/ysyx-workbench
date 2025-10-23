@@ -27,15 +27,81 @@ int main(int argc, char **argv)
     top->trace(tfp, 99);
     tfp->open("build/obj_dir/simx.vcd");
 #endif
+    int result = 0;
     while (contextp->time() < sim_time && !contextp->gotFinish())
     {
         contextp->timeInc(1);
         /* user simulation start */
-        int in = rand() % 256;
-        top->in = in;
-        top->eval();
-        tfp->dump(contextp->time());
-        printf("in = %d, valid = %d, led = %d, seg = %d\n", in, top->valid, top->led, top->seg);
+        int sel = rand() % 8;
+        int A = rand() % 16;
+        int B = rand() % 16;
+        top->A = A;
+        top->B = B;
+        top->sel = sel;
+        switch (top->sel)
+        {
+        case 0: // ADD
+            result = A + B;
+            top->eval();
+            tfp->dump(contextp->time());
+            printf("A = %d, B = %d, sel = %d, result = %d\n", top->A, top->B, top->sel, top->result);
+            assert(top->result == (result & 0xF));
+            break;
+        case 1: // SUB
+            result = A - B;
+            top->eval();
+            tfp->dump(contextp->time());
+            printf("A = %d, B = %d, sel = %d, result = %d\n", top->A, top->B, top->sel, top->result);
+            assert(top->result == (result & 0xF));
+            break;
+        case 2: // NOT
+            result = ~A;
+            top->eval();
+            tfp->dump(contextp->time());
+            printf("A = %d, sel = %d, result = %d\n", top->A, top->sel, top->result);
+            assert(top->result == (result & 0xF));
+            break;
+        case 3: // AND
+            result = A & B;
+            top->eval();
+            tfp->dump(contextp->time());
+            printf("A = %d, B = %d, sel = %d, result = %d\n", top->A, top->B, top->sel, top->result);
+            assert(top->result == (result & 0xF));
+            break;
+        case 4: // OR
+            result = A | B;
+            top->eval();
+            tfp->dump(contextp->time());
+            printf("A = %d, B = %d, sel = %d, result = %d\n", top->A, top->B, top->sel, top->result);
+            assert(top->result == (result & 0xF));
+            break;
+        case 5: // XOR
+            result = A ^ B;
+            top->eval();
+            tfp->dump(contextp->time());
+            printf("A = %d, B = %d, sel = %d, result = %d\n", top->A, top->B, top->sel, top->result);
+            assert(top->result == (result & 0xF));
+            break;
+        case 6: // LT
+            if (A >> 3 != B >> 3) // 符号位不同
+                result = (A >> 3) > (B >> 3) ? 1 : 0;
+            else
+                result = (A & 0x7) < (B & 0x7) ? 1 : 0;
+            top->eval();
+            tfp->dump(contextp->time());
+            printf("A = %d, B = %d, sel = %d, result = %d\n", top->A, top->B, top->sel, top->result);
+            assert(top->result == result);
+            break;
+        case 7: // EQ
+            result = (A == B) ? 1 : 0;
+            top->eval();
+            tfp->dump(contextp->time());
+            printf("A = %d, B = %d, sel = %d, result = %d\n", top->A, top->B, top->sel, top->result );
+            assert(top->result == result);
+            break;
+        default:
+            break;
+        }
         /* user simulation end */
     }
     tfp->close();
