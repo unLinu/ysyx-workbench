@@ -18,6 +18,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
+//
+#include <memory/vaddr.h>
 
 static int is_batch_mode = false;
 
@@ -53,6 +55,64 @@ static int cmd_q(char *args) {
   return -1;
 }
 
+static int cmd_si(char *args) {
+  uint64_t exec_num = 0;
+  if (args == NULL)
+    exec_num = 1;
+  else
+    exec_num = (uint64_t)strtol(args, NULL, 10); // 输入负数会被强转为一个很大的整数，等效持续执行
+  cpu_exec(exec_num);
+  return 0;
+}
+
+static int cmd_info(char *args) {
+  if (args == NULL) {
+    printf("Need argument r or w.\n");
+    return 1;
+  }
+
+  if (strcmp(args, "r") == 0)
+    isa_reg_display();
+  else {
+    printf("Invalid argument (must be r or w).\n");
+    return 1;
+  }
+  return 0;
+}
+
+static int cmd_x(char *args) {
+  int N = 0;          // 扫描单元数
+  vaddr_t vaddr = 0;  // 起始虚拟地址
+  char *args1, *args2;
+  char *args1_end, *args2_end;
+  if (args == NULL) {
+    printf("Need two arguments.\n");
+    return 1;
+  }
+
+  args1 = strtok(args, " ");
+  args2 = strtok(NULL, " ");
+  if (args1 == NULL || args2 == NULL) {
+    printf("Need two arguments.\n");
+    return 1;
+  }
+
+  N = strtol(args1, &args1_end, 10);
+  vaddr = strtol(args2, &args2_end, 0);
+  if (*args1_end != '\0' || *args2_end != '\0' || N < 0) {  // 检查是否包含非法字符
+    printf("Invalid arguments.\n");
+    return 1;
+  }
+
+  printf(FMT_PADDR ":\t", vaddr);
+  for (int i = 0; i < N; i++) {
+    word_t data = vaddr_read(vaddr + 4 * i, 4);
+    printf(FMT_WORD "\t", data);
+  }
+  printf("\n");
+  return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -65,6 +125,9 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
 
   /* TODO: Add more commands */
+  {"si", "Pause program execution after single-stepping N instructions. if N is not specified, the default value is 1.", cmd_si},
+  {"info", "Print register state(info r). Print watchpoint information(info w).", cmd_info},
+  {"x", "Calculate the value of the expression EXPR, use the result as the starting memory address, and output N consecutive 4-byte values in hexadecimal format.", cmd_x}
 
 };
 
