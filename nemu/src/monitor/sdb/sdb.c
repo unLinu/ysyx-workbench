@@ -113,6 +113,70 @@ static int cmd_x(char *args) {
   return 0;
 }
 
+static int cmd_p(char *args) {
+  bool success = 0;
+  word_t result = 0;
+  if (args == NULL) {
+    printf("Need expression.\n");
+    return 1;
+  }
+  result = expr(args, &success);
+  if (!success) {
+    printf("Invalid expression, please check.\n");
+    return 1;
+  }
+  printf("%d\n", (int)result);
+  return 0;
+}
+
+static int cmd_test(char *args) {
+  int ret = system("cd $NEMU_HOME/tools/gen-expr && make > /dev/null");
+  if (ret != 0) {
+    printf("gen-expr.c make error.\n");
+    return 1;
+  }
+  ret = system("cd $NEMU_HOME/tools/gen-expr && ./build/gen-expr 500");
+  if (ret != 0) {
+    printf("Generate test file error.\n");
+    return 1;
+  }
+
+  FILE *fp = fopen("/tmp/input.txt", "r");
+  bool success = false;
+  word_t result = 0;
+  word_t std_res = 0;
+  unsigned pass = 0, fail = 0, cur_line = 0;
+
+  char line[65536 + 33];
+  char exp[65536];
+
+  if (fp == NULL) {
+    printf("Failed to open /tmp/input.txt.\n");
+    return 1;
+  }
+  while (fgets(line, sizeof(line), fp) != NULL) {
+    cur_line++;
+    if (sscanf(line, "%d %[^\n]\n", &std_res, exp) != 2) {
+      printf("Fail to read line %d.\n", cur_line);
+      fail++;
+      continue;
+    }
+
+    result = expr(exp, &success);
+    if (!success || result != std_res) {
+      printf("Fail at line %d in input.txt.\n", cur_line);
+      fail++;
+    }
+    else
+      pass++;
+  }
+
+  fclose(fp);
+  printf("Test over. %d passed, %d failed.\n", pass, fail);
+
+  return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -127,8 +191,9 @@ static struct {
   /* TODO: Add more commands */
   {"si", "Pause program execution after single-stepping N instructions. if N is not specified, the default value is 1.", cmd_si},
   {"info", "Print register state(info r). Print watchpoint information(info w).", cmd_info},
-  {"x", "Calculate the value of the expression EXPR, use the result as the starting memory address, and output N consecutive 4-byte values in hexadecimal format.", cmd_x}
-
+  {"x", "Calculate the value of the expression EXPR, use the result as the starting memory address, and output N consecutive 4-byte values in hexadecimal format.", cmd_x},
+  {"p", "Calculate the value of the expression.", cmd_p},
+  {"test", "Run expression evaluation tests", cmd_test}
 };
 
 #define NR_CMD ARRLEN(cmd_table)
