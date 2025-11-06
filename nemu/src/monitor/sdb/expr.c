@@ -44,7 +44,7 @@ static struct rule {
   {"/", '/'},                 // divide
   {"\\(", '('},               // left parenthesis
   {"\\)", ')'},               // right parenthesis
-  {"[0-9]+", TK_INT_DEC}        // decimal integer 
+  {"[0-9]+", TK_INT_DEC}      // decimal integer
 
 };
 
@@ -223,8 +223,8 @@ word_t eval(int tok_s, int tok_e) {
         else {
           op_ptr = i;
           op_type = tokens[i].type;
+          op_pri = 1;
         }
-        op_pri = 1;
       }
       else if (op_pri == 0 && (tokens[i].type == '*' || tokens[i].type == '/')) {
         op_ptr = i;

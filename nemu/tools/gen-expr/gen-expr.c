@@ -31,18 +31,26 @@ static char *code_format =
 "  return 0; "
 "}";
 
-int buf_ptr = 0;
+static int buf_ptr = 0;
+static int depth = 0;
 #define MAX_NUM RAND_MAX
 #define BUF_SIZE 1000
+#define MAX_DEPTH 100
 
 static void gen_num();      
 static void gen(char token);
 static void gen_rand_op();
-static void gen_rand_space();
+static void gen_rand(char token, int num); // 50%概率随机生成1-{num}次的token
 
 static void gen_rand_expr() {
+  if (depth >= MAX_DEPTH || buf_ptr > BUF_SIZE) { // 限制递归深度
+    gen_num();
+    return;
+  }
+  depth++;
   switch (rand() % 3) {
   case 0:
+    gen_rand('-', 1);
     gen_num();
     break;
   case 1:
@@ -75,6 +83,7 @@ int main(int argc, char *argv[]) {
     }
 
     buf_ptr = 0;
+    depth = 0;
     gen_rand_expr();
     buf[buf_ptr] = '\0';
 
@@ -108,7 +117,7 @@ static void gen(char token) {
     return;
   buf[buf_ptr++] = token;
 
-  gen_rand_space();
+  gen_rand(' ', 3);
 }
 
 static void gen_num() {
@@ -122,7 +131,7 @@ static void gen_num() {
   strcpy(&buf[buf_ptr], buf_temp);
   buf_ptr = buf_ptr + strlen(buf_temp);
 
-  gen_rand_space();
+  gen_rand(' ', 3);
 }
 
 static void gen_rand_op() {
@@ -146,17 +155,17 @@ static void gen_rand_op() {
     break;
   }
 
-  gen_rand_space();
+  gen_rand(' ', 3);
 }
 
-static void gen_rand_space() {
+static void gen_rand(char token, int num) {
   if (buf_ptr > BUF_SIZE)
     return;
   if (rand() % 2 == 0) {
-    int n = rand() % 3 + 1;
+    int n = rand() % num + 1;
     for (int i = 0; i < n && buf_ptr < BUF_SIZE; i++)
     {
-      buf[buf_ptr++] = ' ';
+      buf[buf_ptr++] = token;
     }
   }
 }
