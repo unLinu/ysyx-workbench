@@ -57,10 +57,17 @@ static int cmd_q(char *args) {
 
 static int cmd_si(char *args) {
   uint64_t exec_num = 0;
+  char *args_end;
   if (args == NULL)
     exec_num = 1;
-  else
-    exec_num = (uint64_t)strtol(args, NULL, 10); // 输入负数会被强转为一个很大的整数，等效持续执行
+  else {
+    exec_num = (uint64_t)strtol(args, &args_end, 10); // 输入负数会被强转为一个很大的整数，等效持续执行
+    if (*args_end != '\0') {
+      printf("Invalid argument.\n");
+      return 1;
+    }
+  }
+  
   cpu_exec(exec_num);
   return 0;
 }
@@ -73,6 +80,9 @@ static int cmd_info(char *args) {
 
   if (strcmp(args, "r") == 0)
     isa_reg_display();
+  else if (strcmp(args, "w") == 0) {
+    wp_info_display();
+  }
   else {
     printf("Invalid argument (must be r or w).\n");
     return 1;
@@ -156,7 +166,7 @@ static int cmd_test(char *args) {
   }
   while (fgets(line, sizeof(line), fp) != NULL) {
     cur_line++;
-    if (sscanf(line, "%d %[^\n]\n", &std_res, exp) != 2) {
+    if (sscanf(line, "%u %[^\n]\n", &std_res, exp) != 2) {
       printf("Fail to read line %d.\n", cur_line);
       fail++;
       continue;
@@ -177,6 +187,56 @@ static int cmd_test(char *args) {
   return 0;
 }
 
+static int cmd_w(char *args) {
+  if (args == NULL) {
+    printf("Need expression.\n");
+    return 1;
+  }
+  bool success = false;
+  word_t wat_val = expr(args, &success);
+  if (!success) {
+    printf("Invalid expression.\n");
+    return 1;
+  }
+
+  WP *new = new_wp();
+  if (strlen(args) >= ARRLEN(new->expr)) {
+    printf("Expression too long.\n");
+    free_wp(new);
+    return 1;
+  }
+
+  strcpy(new->expr, args);
+  new->value = wat_val;
+  new->hit = 0;
+  printf("Watchpoint %d: %s\n", new->NO, new->expr);
+
+  return 0;
+}
+
+static int cmd_d(char *args) {
+  if (args == NULL) {
+    printf("Watchpoint number required.\n");
+    return 1;
+  }
+
+  char *args_end;
+  int NO = (int)strtol(args, &args_end, 10);
+
+  if (*args_end != '\0') {
+    printf("Invalid watchpoint number.\n");
+    return 1;
+  }
+
+  WP *wp = find_wp(NO);
+  if (wp == NULL)
+    return 1;
+ 
+  free_wp(wp);
+
+  return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -193,7 +253,9 @@ static struct {
   {"info", "Print register state(info r). Print watchpoint information(info w).", cmd_info},
   {"x", "Calculate the value of the expression EXPR, use the result as the starting memory address, and output N consecutive 4-byte values in hexadecimal format.", cmd_x},
   {"p", "Calculate the value of the expression.", cmd_p},
-  {"test", "Run expression evaluation tests", cmd_test}
+  {"test", "Run expression evaluation tests", cmd_test},
+  {"w", "Set watchpoint.", cmd_w},
+  {"d", "Delete watchpoint.", cmd_d}
 };
 
 #define NR_CMD ARRLEN(cmd_table)

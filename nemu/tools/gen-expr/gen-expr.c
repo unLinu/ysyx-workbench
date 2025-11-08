@@ -37,21 +37,21 @@ static int depth = 0;
 #define BUF_SIZE 1000
 #define MAX_DEPTH 100
 
-static void gen_num();      
+static void gen_num(int fmt);      
 static void gen(char token);
 static void gen_rand_op();
 static void gen_rand(char token, int num); // 50%概率随机生成1-{num}次的token
 
 static void gen_rand_expr() {
   if (depth >= MAX_DEPTH || buf_ptr > BUF_SIZE) { // 限制递归深度
-    gen_num();
+    gen_num(10);
     return;
   }
   depth++;
   switch (rand() % 3) {
   case 0:
     gen_rand('-', 1);
-    gen_num();
+    gen_num(rand() % 2 ? 10 : 16);
     break;
   case 1:
     gen('(');
@@ -101,11 +101,11 @@ int main(int argc, char *argv[]) {
     assert(fp != NULL);
 
     int result;
-    ret = fscanf(fp, "%d", &result);
+    ret = fscanf(fp, "%u", &result);
     pclose(fp);
 
     if (ret != -1)
-      fprintf(fp_out, "%d %s\n", result, buf);
+      fprintf(fp_out, "%u %s\n", result, buf);
   }
   fclose(fp_out);
   printf("\r%*s\r", 50, " ");
@@ -120,12 +120,25 @@ static void gen(char token) {
   gen_rand(' ', 3);
 }
 
-static void gen_num() {
+static void gen_num(int fmt) {
   if (buf_ptr > BUF_SIZE)
     return;
   uint32_t num = rand() % MAX_NUM;
   char buf_temp[32];
-  sprintf(buf_temp, "%d", num);
+
+  // 选择输出格式
+  switch (fmt) {
+  case 10:
+    sprintf(buf_temp, "%d", num);
+    break;
+  case 16:
+    sprintf(buf_temp, "0x%x", num);
+    break;
+  default:
+    sprintf(buf_temp, "%d", num);
+    break;
+  }
+
   if (buf_ptr + strlen(buf_temp) > BUF_SIZE)
     return;
   strcpy(&buf[buf_ptr], buf_temp);
@@ -137,7 +150,7 @@ static void gen_num() {
 static void gen_rand_op() {
   if (buf_ptr > BUF_SIZE)
     return;
-  switch (rand() % 4) {
+  switch (rand() % 13) {
   case 0:
     buf[buf_ptr++] = '+';
     break;
@@ -149,6 +162,39 @@ static void gen_rand_op() {
     break;
   case 3:
     buf[buf_ptr++] = '/';
+    break;
+  case 4:
+    buf[buf_ptr++] = '|';
+    buf[buf_ptr++] = '|';
+    break;
+  case 5:
+    buf[buf_ptr++] = '&';
+    buf[buf_ptr++] = '&';
+    break;
+  case 6:
+    buf[buf_ptr++] = '=';
+    buf[buf_ptr++] = '=';
+    break;
+  case 7:
+    buf[buf_ptr++] = '!';
+    buf[buf_ptr++] = '=';
+    break;
+  case 8:
+    buf[buf_ptr++] = '<';
+    break;
+  case 9:
+    buf[buf_ptr++] = '>';
+    break;
+  case 10:
+    buf[buf_ptr++] = '<';
+    break;
+  case 11:
+    buf[buf_ptr++] = '>';
+    buf[buf_ptr++] = '=';
+    break;
+  case 12:
+    buf[buf_ptr++] = '<';
+    buf[buf_ptr++] = '=';
     break;
   default:
     buf[buf_ptr++] = '+';
