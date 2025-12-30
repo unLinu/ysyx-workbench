@@ -61,3 +61,8 @@ else
 # Include rules to build NEMU
 include $(NEMU_HOME)/scripts/native.mk
 endif
+
+# Count lines of code
+count:
+	@echo "total lines:"
+	@find . -name "*.c" -o -name "*.h" | xargs cat | grep -v '^$$' | wc -l
