@@ -1,5 +1,6 @@
 # Variables
 SIMULATOR = verilator
+WAVEVIEWER = surfer
 TOP_MODULE = top
 BUILD_DIR = build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
@@ -21,13 +22,13 @@ ifdef FST
 	 csrc/tb_$(TOP_MODULE).cpp vsrc/*.v
 	@$(OBJ_DIR)/V$(TOP_MODULE) > /dev/null
 	@echo "Simulation with FST trace completed."
-	@gtkwave $(OBJ_DIR)/simx.fst
+	@$(WAVEVIEWER) $(OBJ_DIR)/simx.fst
 else
 	@$(SIMULATOR) $(CFLAGS) --trace-vcd \
 	 csrc/tb_$(TOP_MODULE).cpp vsrc/*.v
 	@$(OBJ_DIR)/V$(TOP_MODULE) > /dev/null
 	@echo "Simulation with VCD trace completed."
-	@gtkwave $(OBJ_DIR)/simx.vcd
+	@$(WAVEVIEWER) $(OBJ_DIR)/simx.vcd
 endif
 
 ### NVBoard 
