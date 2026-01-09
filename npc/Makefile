@@ -4,7 +4,10 @@ WAVEVIEWER = surfer
 TOP_MODULE = top
 BUILD_DIR = build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
-CFLAGS = --cc --exe --build -j 0 -Wall --top-module $(TOP_MODULE) --Mdir $(OBJ_DIR)
+CFLAGS = --cc --exe --build -j $(shell nproc) -Wall --top-module $(TOP_MODULE) --Mdir $(OBJ_DIR)
+CFLAGS += -Ivsrc
+CFLAGS += -Wno-fatal
+SIMCPP = $(shell find $(abspath ./csrc) -name "*.cpp" ! -name "main.cpp")
 
 NXDC_FILES = constr/top.nxdc
 NVBOARD_CFLAGS += -MMD --build -cc  \
@@ -19,14 +22,14 @@ sim:
 	@mkdir -p $(OBJ_DIR)
 ifdef FST
 	@$(SIMULATOR) $(CFLAGS) --trace-fst -CFLAGS "-DFST" \
-	 csrc/tb_$(TOP_MODULE).cpp vsrc/*.v
-	@$(OBJ_DIR)/V$(TOP_MODULE) > /dev/null
+	 $(SIMCPP) $(VSRCS) 
+	@$(OBJ_DIR)/V$(TOP_MODULE) 
 	@echo "Simulation with FST trace completed."
 	@$(WAVEVIEWER) $(OBJ_DIR)/simx.fst
 else
 	@$(SIMULATOR) $(CFLAGS) --trace-vcd \
-	 csrc/tb_$(TOP_MODULE).cpp vsrc/*.v
-	@$(OBJ_DIR)/V$(TOP_MODULE) > /dev/null
+	 $(SIMCPP) $(VSRCS)
+	@$(OBJ_DIR)/V$(TOP_MODULE) 
 	@echo "Simulation with VCD trace completed."
 	@$(WAVEVIEWER) $(OBJ_DIR)/simx.vcd
 endif
@@ -45,7 +48,7 @@ $(SRC_AUTO_BIND): $(NXDC_FILES)
 	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
 
 # project source
-VSRCS = $(shell find $(abspath ./vsrc) -name "*.v")
+VSRCS = $(shell find $(abspath ./vsrc) -name "*.v" -o -name "*.sv")
 CSRCS = $(shell find $(abspath ./csrc) -name "main.cpp")
 CSRCS += $(SRC_AUTO_BIND)
 

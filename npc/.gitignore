@@ -5,8 +5,11 @@
 !*.mk
 !*.[cSh]
 !*.v
+!*.sv
+!*.svh
 !*.cc
 !*.cpp
 !.gitignore
 !README.md
 build/
+cpu_test/
