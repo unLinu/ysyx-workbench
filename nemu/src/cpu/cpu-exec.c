@@ -51,6 +51,7 @@ static void exec_once(Decode *s, vaddr_t pc) {
   s->pc = pc;
   s->snpc = pc;
   isa_exec_once(s);
+  IFDEF(CONFIG_FTRACE, ftrace_log(s->isa.inst, s->dnpc)); // ftrace
   cpu.pc = s->dnpc;
 #ifdef CONFIG_ITRACE
   char *p = s->logbuf;
@@ -75,6 +76,8 @@ static void exec_once(Decode *s, vaddr_t pc) {
   void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
   disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
       MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst, ilen);
+  // 添加当前指令到环形缓冲区
+  iringbuf_add(s->logbuf);
 #endif
 }
 
@@ -100,6 +103,7 @@ static void statistic() {
 
 void assert_fail_msg() {
   isa_reg_display();
+  iringbuf_display();
   statistic();
 }
 

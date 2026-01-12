@@ -12,7 +12,11 @@ CFLAGS    += -I$(AM_HOME)/am/src/platform/nemu/include
 LDSCRIPTS += $(AM_HOME)/scripts/linker.ld
 LDFLAGS   += --defsym=_pmem_start=0x80000000 --defsym=_entry_offset=0x0
 LDFLAGS   += --gc-sections -e _start
-NEMUFLAGS += -b -l $(shell dirname $(IMAGE).elf)/nemu-log.txt # 给NEMU执行时的参数
+NEMUFLAGS += -l $(shell dirname $(IMAGE).elf)/nemu-log.txt # 给NEMU执行时的参数
+NEMUFLAGS += -e $(shell realpath $(IMAGE).elf)
+ifndef SDB
+    NEMUFLAGS += -b # 默认启用批处理模式
+endif
 
 MAINARGS_MAX_LEN = 64
 MAINARGS_PLACEHOLDER = the_insert-arg_rule_in_Makefile_will_insert_mainargs_here

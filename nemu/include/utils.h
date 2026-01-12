@@ -17,6 +17,7 @@
 #define __UTILS_H__
 
 #include <common.h>
+#include <elf.h>
 
 // ----------- state -----------
 
@@ -73,5 +74,28 @@ uint64_t get_time();
     log_write(__VA_ARGS__); \
   } while (0)
 
+// ----------- trace -----------
+#define IRINGBUF_SIZE 5
+
+typedef struct {
+  char logbuf[128];
+} IRingBuf;
+
+typedef struct {
+  char name[20];
+  Elf32_Addr entry_addr;
+  uint32_t func_size;
+} FuncInfo;
+
+extern IRingBuf irbuf[IRINGBUF_SIZE];
+extern FuncInfo *ftrace_table;
+
+void init_iringbuf();
+void iringbuf_add(char *log);
+void iringbuf_display();
+
+FuncInfo* init_ftrace(const char *elf_file);
+void free_ftrace(FuncInfo *table);
+void ftrace_log(uint32_t inst, uint32_t dnpc);
 
 #endif

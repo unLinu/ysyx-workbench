@@ -31,5 +31,8 @@ int main(int argc, char *argv[]) {
   /* Start engine. */
   engine_start();
 
+  /* free ftrace_table */
+  IFDEF(CONFIG_FTRACE, free_ftrace(ftrace_table));
+
   return is_exit_status_bad();
 }
