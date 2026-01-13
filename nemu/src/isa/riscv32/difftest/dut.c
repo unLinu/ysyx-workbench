@@ -18,7 +18,20 @@
 #include "../local-include/reg.h"
 
 bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
-  return false;
+  for (int i = 0; i < ARRLEN(ref_r->gpr); i++) {
+    if (ref_r->gpr[i] != gpr(i)) {
+      printf(ANSI_FMT("Reg[%d] wrong. Expect " FMT_WORD ", actual " FMT_WORD "\n", ANSI_FG_RED), i, ref_r->gpr[i], gpr(i));
+      printf(ANSI_FMT("Difftest failed at pc = " FMT_WORD "\n", ANSI_FG_RED), pc);
+      return false;
+    }
+  }
+
+  if (ref_r->pc != cpu.pc) {
+    printf(ANSI_FMT("PC wrong. Expect " FMT_WORD ", actual " FMT_WORD "\n", ANSI_FG_RED), ref_r->pc, cpu.pc);
+    printf(ANSI_FMT("Difftest failed at pc = " FMT_WORD "\n", ANSI_FG_RED), pc);
+    return false;
+  }
+  return true;
 }
 
 void isa_difftest_attach() {
