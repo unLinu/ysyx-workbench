@@ -32,6 +32,7 @@ static bool g_print_step = false;
 
 void device_update();
 int scan_wp();
+void ftrace_log(uint32_t inst, Decode *s);
 
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
@@ -39,7 +40,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #endif
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
-
+  IFDEF(CONFIG_FTRACE, ftrace_log(_this->isa.inst, _this)); // ftrace
   // 扫描监视点
   int wp_hit = 0;
   IFDEF(CONFIG_WATCHPOINT, (wp_hit = scan_wp()));
@@ -51,7 +52,6 @@ static void exec_once(Decode *s, vaddr_t pc) {
   s->pc = pc;
   s->snpc = pc;
   isa_exec_once(s);
-  IFDEF(CONFIG_FTRACE, ftrace_log(s->isa.inst, s->dnpc)); // ftrace
   cpu.pc = s->dnpc;
 #ifdef CONFIG_ITRACE
   char *p = s->logbuf;

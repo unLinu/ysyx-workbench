@@ -83,7 +83,7 @@ typedef struct {
 
 typedef struct {
   char name[20];
-  Elf32_Addr entry_addr;
+  uint32_t entry_addr;
   uint32_t func_size;
 } FuncInfo;
 
@@ -96,6 +96,5 @@ void iringbuf_display();
 
 FuncInfo* init_ftrace(const char *elf_file);
 void free_ftrace(FuncInfo *table);
-void ftrace_log(uint32_t inst, uint32_t dnpc);
 
 #endif

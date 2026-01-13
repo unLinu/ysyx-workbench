@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <isa.h>
 #include <debug.h>
+#include <cpu/decode.h>
 
 FuncInfo *ftrace_table = NULL; // 全局函数表指针
 static int ftrace_table_len = 0;
@@ -83,7 +84,7 @@ void free_ftrace(FuncInfo *table) {
   }
 }
 
-void ftrace_log(uint32_t inst, uint32_t dnpc) {
+void ftrace_log(uint32_t inst, Decode *s) {
   Assert(ftrace_table != NULL, "Ftrace table is not initialized.");
   // 提取 opcode rd rs1 字段
   uint8_t opcode = inst & 0x7f;
@@ -93,8 +94,8 @@ void ftrace_log(uint32_t inst, uint32_t dnpc) {
   size_t i;
   if ((opcode == 0x6f || opcode == 0x67) && rd == 1) {
     for (i = 0; i < ftrace_table_len; i++) {
-      if (ftrace_table[i].entry_addr == dnpc) {
-        Log("\t" FMT_WORD ": %*scall [%s@" FMT_WORD "]", cpu.pc, call_depth * 2, "", ftrace_table[i].name, ftrace_table[i].entry_addr);
+      if (ftrace_table[i].entry_addr == s->dnpc) {
+        Log("\t" FMT_WORD ": %*scall [%s@" FMT_WORD "]", s->pc, call_depth * 2, "", ftrace_table[i].name, ftrace_table[i].entry_addr);
         call_depth++;
         Assert(i < ftrace_table_len, "Cannot find function in ftrace table!");
         break;
@@ -106,9 +107,9 @@ void ftrace_log(uint32_t inst, uint32_t dnpc) {
     for (i = 0; i < ftrace_table_len; i++) {
       Elf32_Addr func_start = ftrace_table[i].entry_addr;
       Elf32_Addr func_end = func_start + ftrace_table[i].func_size;
-      if (func_start <= cpu.pc && cpu.pc <= func_end) {
+      if (func_start <= s->pc && s->pc <= func_end) {
         call_depth--;
-        Log("\t" FMT_WORD ": %*sret [%s]", cpu.pc, call_depth * 2, "", ftrace_table[i].name);
+        Log("\t" FMT_WORD ": %*sret [%s]", s->pc, call_depth * 2, "", ftrace_table[i].name);
         Assert(i < ftrace_table_len, "Cannot find function in ftrace table!");
         break;
       }
