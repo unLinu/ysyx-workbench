@@ -1,7 +1,7 @@
 # Variables
 SIMULATOR = verilator
 WAVEVIEWER = surfer
-TOP_MODULE = top
+TOP_MODULE = npc_core
 BUILD_DIR = build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
 CFLAGS = --cc --exe --build -j $(shell nproc) -Wall --top-module $(TOP_MODULE) --Mdir $(OBJ_DIR)

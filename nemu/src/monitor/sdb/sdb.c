@@ -118,6 +118,8 @@ static int cmd_x(char *args) {
   for (int i = 0; i < N; i++) {
     word_t data = vaddr_read(vaddr + 4 * i, 4);
     printf(FMT_WORD "\t", data);
+    if (i % 4 == 3 && i != N - 1)
+      printf("\n" FMT_PADDR ":\t", vaddr + 4 * (i + 1));
   }
   printf("\n");
   return 0;

@@ -12,4 +12,3 @@
 !.gitignore
 !README.md
 build/
-cpu_test/

@@ -18,15 +18,15 @@ void iringbuf_add(char *log) {
 void iringbuf_display() {
   int start = (latest_index + 1) % IRINGBUF_SIZE; // 从最旧的一条开始打印
 
-  printf("------ Recent Instruction Trace ------\n");
+  printf(ANSI_FMT("------ Recent Instruction Trace ------", ANSI_FG_GREY) "\n");
   for (size_t i = 0; i < IRINGBUF_SIZE; i++) {
     int cur_index = (start + i) % IRINGBUF_SIZE;
     if (irbuf[cur_index].logbuf[0] != '\0') {
       if (i == IRINGBUF_SIZE - 1)
-        printf(ANSI_FMT("--> %s", ANSI_FG_RED) "\n", irbuf[cur_index].logbuf);
+        printf(ANSI_FMT("%s\t<--x", ANSI_FG_RED) "\n", irbuf[cur_index].logbuf);
       else
-        printf("    %s\n", irbuf[cur_index].logbuf);
+        printf("%s\n", irbuf[cur_index].logbuf);
     }
   }
-  printf("------ End of Instruction Trace ------\n");
+  printf(ANSI_FMT("------ End of Instruction Trace ------", ANSI_FG_GREY) "\n");
 }

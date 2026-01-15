@@ -35,17 +35,19 @@ int scan_wp();
 void ftrace_log(uint32_t inst, Decode *s);
 
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
+// 扫描监视点
+int wp_hit = 0;
+IFDEF(CONFIG_WATCHPOINT, (wp_hit = scan_wp()));
+if (wp_hit != 0 && nemu_state.state != NEMU_END)
+  nemu_state.state = NEMU_STOP;
+
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
 #endif
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
+  iringbuf_add(_this->logbuf);
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
   IFDEF(CONFIG_FTRACE, ftrace_log(_this->isa.inst, _this)); // ftrace
-  // 扫描监视点
-  int wp_hit = 0;
-  IFDEF(CONFIG_WATCHPOINT, (wp_hit = scan_wp()));
-  if (wp_hit != 0 && nemu_state.state != NEMU_END)
-    nemu_state.state = NEMU_STOP;
 }
 
 static void exec_once(Decode *s, vaddr_t pc) {
@@ -76,8 +78,6 @@ static void exec_once(Decode *s, vaddr_t pc) {
   void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
   disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
       MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst, ilen);
-  // 添加当前指令到环形缓冲区
-  iringbuf_add(s->logbuf);
 #endif
 }
 

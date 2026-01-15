@@ -95,7 +95,7 @@ void ftrace_log(uint32_t inst, Decode *s) {
   if ((opcode == 0x6f || opcode == 0x67) && rd == 1) {
     for (i = 0; i < ftrace_table_len; i++) {
       if (ftrace_table[i].entry_addr == s->dnpc) {
-        Log("\t" FMT_WORD ": %*scall [%s@" FMT_WORD "]", s->pc, call_depth * 2, "", ftrace_table[i].name, ftrace_table[i].entry_addr);
+        FTRACE_FMT_PRINT(call_depth, "call", ftrace_table[i].name, s->pc);
         call_depth++;
         Assert(i < ftrace_table_len, "Cannot find function in ftrace table!");
         break;
@@ -109,7 +109,7 @@ void ftrace_log(uint32_t inst, Decode *s) {
       Elf32_Addr func_end = func_start + ftrace_table[i].func_size;
       if (func_start <= s->pc && s->pc <= func_end) {
         call_depth--;
-        Log("\t" FMT_WORD ": %*sret [%s]", s->pc, call_depth * 2, "", ftrace_table[i].name);
+        FTRACE_FMT_PRINT(call_depth, "ret", ftrace_table[i].name, s->pc);
         Assert(i < ftrace_table_len, "Cannot find function in ftrace table!");
         break;
       }

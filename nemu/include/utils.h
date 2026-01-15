@@ -45,6 +45,7 @@ uint64_t get_time();
 #define ANSI_FG_MAGENTA "\33[1;35m"
 #define ANSI_FG_CYAN    "\33[1;36m"
 #define ANSI_FG_WHITE   "\33[1;37m"
+#define ANSI_FG_GREY    "\33[1;90m"
 #define ANSI_BG_BLACK   "\33[1;40m"
 #define ANSI_BG_RED     "\33[1;41m"
 #define ANSI_BG_GREEN   "\33[1;42m"
@@ -75,7 +76,37 @@ uint64_t get_time();
   } while (0)
 
 // ----------- trace -----------
-#define IRINGBUF_SIZE 5
+#define REG_FMT_PRINT(reg) \
+  printf(ANSI_FMT("%3s", ANSI_FG_CYAN) ": " FMT_WORD " ", reg, gpr(i));
+
+#define FTRACE_FMT_PRINT(depth, type, func, addr) \
+  do { \
+    printf(ANSI_FMT("[ftrace] ", ANSI_FG_MAGENTA) FMT_PADDR ": ", addr); \
+    for (int _k = 0; _k < (depth); _k++) { \
+      printf(ANSI_FMT("|   ", ANSI_FG_GREY));\
+    } \
+    if (strcmp(type, "call") == 0) { \
+      printf(ANSI_FMT("-> call", ANSI_FG_GREEN)); \
+    } else { \
+      printf(ANSI_FMT("<- ret ", ANSI_FG_YELLOW)); \
+    } \
+    printf(ANSI_FMT(" [%s @" FMT_WORD "]", ANSI_FG_CYAN) "\n", func, addr); \
+  } while (0)
+
+#define MTRACE_FMT_PRINT(WR, pc, addr, data, len) \
+  do { \
+    if (addr >= CONFIG_MTRACE_START && addr <= CONFIG_MTRACE_END) { \
+      printf(ANSI_FMT("[mtrace] ", ANSI_FG_MAGENTA) "PC: " FMT_WORD " ", pc); \
+      if (strcmp(WR, "READ") == 0) { \
+        printf(ANSI_FMT("READ ", ANSI_FG_GREEN)); \
+      } else { \
+        printf(ANSI_FMT("WRITE", ANSI_FG_YELLOW)); \
+      } \
+      printf(" Addr: " FMT_WORD " Data: " FMT_WORD " Len: %d\n", addr, data, len); \
+    } \
+  } while (0)
+
+#define IRINGBUF_SIZE 10 
 
 typedef struct {
   char logbuf[128];

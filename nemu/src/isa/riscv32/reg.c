@@ -24,9 +24,11 @@ const char *regs[] = {
 };
 
 void isa_reg_display() {
+  printf(ANSI_FMT("------ Info of Registers ------\n", ANSI_FG_GREY));
   for (int i = 0; i < ARRLEN(regs); i++) {
-    printf("%s:\t0x%-10x", regs[i], gpr(i));
-    printf("\r\t\t\t\t%d\n", gpr(i));
+    REG_FMT_PRINT(regs[i]);
+    if ((i + 1) % 4 == 0) 
+      printf("\n");
   }
 }
 
