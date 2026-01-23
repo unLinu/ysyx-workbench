@@ -40,12 +40,20 @@ config ENGINE_INTERPRETER
   bool "Interpreter"
   help
     Interpreter guest instructions one by one.
+
+config ENGINE_NPC
+  bool "NPC"
+  depends on !TARGET_SHARE
+  help
+    Use NPC as the execution engine.
+
 endchoice
 
 config ENGINE
   string
-  default "interpreter" if ENGINE_INTERPRETER
-  default "none"
+  default "interpreter" if TARGET_SHARE
+  default "npc" if ENGINE_NPC
+  default "interpreter"
 
 choice
   prompt "Running mode"
@@ -142,7 +150,7 @@ config TRACE_END
   default 10000
 
 config ITRACE
-  depends on TRACE && TARGET_NATIVE_ELF && ENGINE_INTERPRETER
+  depends on TRACE && TARGET_NATIVE_ELF
   bool "Enable instruction tracer"
   default y
 
@@ -162,7 +170,7 @@ config MTRACE_END
   default 0x87ffffff
 
 config FTRACE
-  depends on TRACE && TARGET_NATIVE_ELF && ENGINE_INTERPRETER
+  depends on TRACE && TARGET_NATIVE_ELF
   bool "Enable function tracer"
   default y
 
@@ -185,6 +193,7 @@ config DIFFTEST
 
 choice
   prompt "Reference design"
+  default DIFFTEST_REF_NEMU if ENGINE_NPC
   default DIFFTEST_REF_SPIKE if ISA_riscv
   default DIFFTEST_REF_KVM if ISA_x86
   default DIFFTEST_REF_QEMU
@@ -199,6 +208,10 @@ if ISA_x86
 config DIFFTEST_REF_KVM
   bool "KVM"
 endif
+if ENGINE_NPC
+config DIFFTEST_REF_NEMU
+  bool "NEMU-INTERPRETER"
+endif
 endchoice
 
 config DIFFTEST_REF_PATH
@@ -206,6 +219,7 @@ config DIFFTEST_REF_PATH
   default "tools/qemu-diff" if DIFFTEST_REF_QEMU
   default "tools/kvm-diff" if DIFFTEST_REF_KVM
   default "tools/spike-diff" if DIFFTEST_REF_SPIKE
+  default "" if DIFFTEST_REF_NEMU
   default "none"
 
 config DIFFTEST_REF_NAME
@@ -213,6 +227,7 @@ config DIFFTEST_REF_NAME
   default "qemu" if DIFFTEST_REF_QEMU
   default "kvm" if DIFFTEST_REF_KVM
   default "spike" if DIFFTEST_REF_SPIKE
+  default "nemu-interpreter" if DIFFTEST_REF_NEMU
   default "none"
 endmenu
 

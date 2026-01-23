@@ -13,6 +13,8 @@ module npc_core import npc_pkg::*; (
     output  logic                       trap_o      
 );
 
+`include "npc_dpi.svh"
+
 /* ==================================================================== */
 /* ============================ Parameters ============================ */
 /* ==================================================================== */
@@ -44,8 +46,6 @@ module npc_core import npc_pkg::*; (
 /* ==================================================================== */
 /* ============================= Main Code ============================ */
 /* ==================================================================== */
-
-    import "DPI-C" function void npc_trap(int pc);
 
     /////////////
     /* alu_mux */
@@ -82,9 +82,9 @@ module npc_core import npc_pkg::*; (
     /////////////////
     /* EBREAK TRAP */
     /////////////////
-    always_ff @(posedge clk) begin
+    always_comb begin
         if (trap_o) begin
-            npc_trap(pc_o);
+            npc_trap();
         end
     end
 

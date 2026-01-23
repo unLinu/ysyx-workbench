@@ -9,6 +9,9 @@
 !*.svh
 !*.cc
 !*.cpp
+!*.hpp
+!*.h
+!*.c
 !.gitignore
 !README.md
 build/

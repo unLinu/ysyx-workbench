@@ -62,6 +62,9 @@ else
 include $(NEMU_HOME)/scripts/native.mk
 endif
 
+# Include rules to build NPC
+include $(NPC_HOME)/script/filelist.mk
+
 # Count lines of code
 count:
 	@echo "total lines:"

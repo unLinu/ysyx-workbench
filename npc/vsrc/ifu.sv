@@ -18,8 +18,8 @@ module ifu import npc_pkg::*; (
 /* ============================ Parameters ============================ */
 /* ==================================================================== */
 
-    npc_pkg::pc_reg_t   pc          ;
-    npc_pkg::word_t     br_target   ;
+    npc_pkg::pc_reg_t   pc /* verilator public */;
+    npc_pkg::word_t     br_target  /* verilator public */ ;
     npc_pkg::word_t     temp_target ;
 
 /* ==================================================================== */

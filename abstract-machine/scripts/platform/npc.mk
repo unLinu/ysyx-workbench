@@ -12,6 +12,11 @@ CFLAGS    += -fdata-sections -ffunction-sections
 LDSCRIPTS += $(AM_HOME)/scripts/linker.ld
 LDFLAGS   += --defsym=_pmem_start=0x80000000 --defsym=_entry_offset=0x0
 LDFLAGS   += --gc-sections -e _start
+NPCFLAGS += -l $(shell dirname $(IMAGE).elf)/nemu-log.txt # 给NEMU执行时的参数
+NPCFLAGS += -e $(shell realpath $(IMAGE).elf)
+ifndef SDB
+    NPCFLAGS += -b # 默认启用批处理模式
+endif
 
 MAINARGS_MAX_LEN = 64
 MAINARGS_PLACEHOLDER = the_insert-arg_rule_in_Makefile_will_insert_mainargs_here
@@ -26,6 +31,9 @@ image: image-dep
 	@$(OBJCOPY) -S --set-section-flags .bss=alloc,contents -O binary $(IMAGE).elf $(IMAGE).bin
 
 run: insert-arg
-	echo "TODO: add command here to run simulation"
+	$(MAKE) -C $(NEMU_HOME) ISA=$(ISA) run ARGS="$(NPCFLAGS)" IMG=$(IMAGE).bin
+    
+gdb: insert-arg
+	$(MAKE) -C $(NEMU_HOME) ISA=$(ISA) gdb ARGS="$(NPCFLAGS)" IMG=$(IMAGE).bin
 
 .PHONY: insert-arg

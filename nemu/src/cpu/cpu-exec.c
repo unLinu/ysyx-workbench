@@ -45,7 +45,7 @@ if (wp_hit != 0 && nemu_state.state != NEMU_END)
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
 #endif
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
-  iringbuf_add(_this->logbuf);
+  IFDEF(CONFIG_ITRACE, iringbuf_add(_this->logbuf));
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
   IFDEF(CONFIG_FTRACE, ftrace_log(_this->isa.inst, _this)); // ftrace
 }
