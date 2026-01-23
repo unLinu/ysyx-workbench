@@ -34,10 +34,10 @@ module npc_core import npc_pkg::*; (
  
     npc_pkg::regid_t            rs1         ;   // idu -> alu
     npc_pkg::regid_t            rs2         ;   // idu -> alu
-    npc_pkg::regid_t            rd          ;   // idu -> regfile
+    npc_pkg::regid_t            rd /* verilator public */         ;   // idu -> regfile
     npc_pkg::word_t             rs1_data    ;   // regfile -> alu_mux 
     npc_pkg::word_t             rs2_data    ;   // regfile -> alu_mux
-    npc_pkg::word_t             rd_data     ;   // mem alu ifu -> regfile
+    npc_pkg::word_t             rd_data /* verilator public */    ;   // mem alu ifu -> regfile
 
     npc_pkg::word_t             snpc        ;   // ifu -> regfile_mux
 

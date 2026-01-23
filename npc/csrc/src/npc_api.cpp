@@ -27,6 +27,13 @@ static inline void npc_regcpy(uint32_t *regs, const uint32_t *npc_gpr) {
   }
 }
 
+static void npc_wb(uint32_t *regs, uint32_t rd, uint32_t wdata) {
+  if (rd != 0 && rd < 32) {
+    regs[rd] = wdata;
+  }
+  Assert(rd < 32 && rd >= 0, "Invalid rd id %d in WB stage", rd);
+}
+
 static inline void npc_pccpy(uint32_t *pc, const uint32_t *npc_pc) {
   *pc = *npc_pc;
 }
@@ -110,8 +117,10 @@ __EXPORT void npc_update_reg(uint32_t *regs, uint32_t *snpc, uint32_t *dnpc) {
   const auto snpc_v = &npc_h->top->npc_core->u_ifu->pc[1];
   const auto dnpc_v = &npc_h->top->npc_core->u_ifu->br_target;
   npc_regcpy(regs, &(*gpr)[0]);
+  // 前递 (使用 info r 获取的寄存器值是 WB 阶段的，非硬件寄存器堆中的值)
   npc_pccpy(snpc, snpc_v);
   npc_pccpy(dnpc, dnpc_v);
+  npc_wb(regs, npc_h->top->npc_core->rd, npc_h->top->npc_core->rd_data);
 }
 
 } // extern "C"
