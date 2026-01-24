@@ -61,13 +61,6 @@ package npc_pkg;
         j_type_t     j          ;
     } inst_type_t;
     
-    /* PC type */
-    typedef struct packed {
-        word_t       curpc      ;
-        word_t       snpc       ;
-        word_t       dnpc       ;
-    } pc_reg_t;
-
     /* Enum define */
     typedef enum [3:0] {
         ALU_ADD, ALU_SUB,

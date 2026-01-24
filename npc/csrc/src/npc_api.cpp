@@ -6,6 +6,7 @@
 #include "../include/macro.h"
 #include <assert.h>
 #include <cstdint>
+#include <stdint.h>
 #ifdef FST
 #include "verilated_fst_c.h"
 #else
@@ -25,17 +26,6 @@ static inline void npc_regcpy(uint32_t *regs, const uint32_t *npc_gpr) {
   for (int i = 0; i < 32; i++) {
     regs[i] = npc_gpr[i];
   }
-}
-
-static void npc_wb(uint32_t *regs, uint32_t rd, uint32_t wdata) {
-  if (rd != 0 && rd < 32) {
-    regs[rd] = wdata;
-  }
-  Assert(rd < 32 && rd >= 0, "Invalid rd id %d in WB stage", rd);
-}
-
-static inline void npc_pccpy(uint32_t *pc, const uint32_t *npc_pc) {
-  *pc = *npc_pc;
 }
 
 extern "C" {
@@ -71,34 +61,35 @@ __EXPORT void npc_reset() {
     npc_h->top->clk = !npc_h->top->clk;
 
     npc_h->top->eval();
-    npc_h->tfp->dump(npc_h->contextp->time());
+    npc_h->tfp->dump(npc_h->contextp->time());  // record clk = 0
   }
 
-  npc_h->top->clk = 0;
-  npc_h->top->eval();
-}
-
-__EXPORT uint32_t npc_exec_once(uint32_t (*ifetch)(uint32_t addr, int len)) {
-  // posedge clk
   npc_h->top->clk = 1;
   npc_h->top->eval();
+  npc_h->top->rst_n = 1; 
+}
 
-  npc_h->top->rst_n = 1;
-  npc_h->top->inst_i = ifetch(npc_h->top->pc_o, 4);
+__EXPORT void npc_exec_once(uint32_t inst, uint32_t *snpc, uint32_t *dnpc) {
+  // execution
+  npc_h->top->inst_i = inst;
   npc_h->top->eval();
   Assert(npc_h->top->inst_err == 0, "Instruction is invalid at PC = 0x%08x", npc_h->top->pc_o);
 
   npc_h->contextp->timeInc(1);
-  npc_h->tfp->dump(npc_h->contextp->time());
+  npc_h->tfp->dump(npc_h->contextp->time());  // record clk = 1
 
-  // negedge clk
+  *snpc = npc_h->top->npc_core->u_ifu->snpc;
+  *dnpc = npc_h->top->npc_core->u_ifu->dnpc;
+
+  // negedege clk
   npc_h->top->clk = 0;
   npc_h->top->eval();
-
   npc_h->contextp->timeInc(1);
-  npc_h->tfp->dump(npc_h->contextp->time());
+  npc_h->tfp->dump(npc_h->contextp->time());  // record clk = 0
 
-  return npc_h->top->inst_i;
+  // posedge clk
+  npc_h->top->clk = 1;
+  npc_h->top->eval();   // 更新 pc，寄存器堆等状态
 }
 
 __EXPORT void npc_delete() {
@@ -112,15 +103,9 @@ __EXPORT void npc_delete() {
   }
 }
 
-__EXPORT void npc_update_reg(uint32_t *regs, uint32_t *snpc, uint32_t *dnpc) {
+__EXPORT void npc_update_reg(uint32_t *regs) {
   const auto gpr = &npc_h->top->npc_core->u_regfile->gpr;
-  const auto snpc_v = &npc_h->top->npc_core->u_ifu->pc[1];
-  const auto dnpc_v = &npc_h->top->npc_core->u_ifu->br_target;
   npc_regcpy(regs, &(*gpr)[0]);
-  // 前递 (使用 info r 获取的寄存器值是 WB 阶段的，非硬件寄存器堆中的值)
-  npc_pccpy(snpc, snpc_v);
-  npc_pccpy(dnpc, dnpc_v);
-  npc_wb(regs, npc_h->top->npc_core->rd, npc_h->top->npc_core->rd_data);
 }
 
 } // extern "C"

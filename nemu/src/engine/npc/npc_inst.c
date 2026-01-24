@@ -1,4 +1,3 @@
-#include <../../isa/riscv32/local-include/reg.h>
 #include <cpu/cpu.h>
 #include <cpu/decode.h>
 #include <cpu/ifetch.h>
@@ -9,9 +8,9 @@
 
 void (*npc_init) (int argc, char **argv) = NULL;
 void (*npc_reset) () = NULL;
-uint32_t (*npc_exec_once) (uint32_t (*ifetch)(uint32_t addr, int len)) = NULL;
+void (*npc_exec_once) (uint32_t inst, uint32_t *snpc, uint32_t *dnpc) = NULL;
 void (*npc_delete) () = NULL;
-void (*npc_update_reg) (uint32_t *regs, uint32_t *snpc, uint32_t *dnpc) = NULL;
+void (*npc_update_reg) (uint32_t *regs) = NULL;
 int  (*npc_get_trap_flag) () = NULL;
 
 void init_engine(char *npc_so_file) {
@@ -45,8 +44,9 @@ void init_engine(char *npc_so_file) {
 }
 
 int isa_exec_once(Decode *s) {
-  s->isa.inst = npc_exec_once(vaddr_ifetch);
-  npc_update_reg(&cpu.gpr[0], &s->snpc, &s->dnpc);
+  s->isa.inst = vaddr_ifetch(s->snpc, 4);
+  npc_exec_once(s->isa.inst, &s->snpc, &s->dnpc);
+  npc_update_reg(cpu.gpr);
   if (npc_get_trap_flag())
     NEMUTRAP(s->pc,0);
   return 0;

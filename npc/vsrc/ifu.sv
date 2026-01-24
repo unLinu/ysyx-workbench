@@ -18,26 +18,28 @@ module ifu import npc_pkg::*; (
 /* ============================ Parameters ============================ */
 /* ==================================================================== */
 
-    npc_pkg::pc_reg_t   pc /* verilator public */;
-    npc_pkg::word_t     br_target  /* verilator public */ ;
+    npc_pkg::word_t     pc         /* verilator public */   ;
+    npc_pkg::word_t     dnpc       /* verilator public */   ;
+    npc_pkg::word_t     snpc       /* verilator public */   ;
+    npc_pkg::word_t     br_target  /* verilator public */   ;
     npc_pkg::word_t     temp_target ;
 
 /* ==================================================================== */
 /* ============================= Main Code ============================ */
 /* ==================================================================== */
 
-    assign  pc_o    =   pc.curpc;
-    assign  snpc_o  =   pc.snpc;
-    assign  pc.snpc =   pc.curpc + `XLEN'd4;
-    assign  pc.dnpc =   (pc_op_i == PC_SEQ) ? pc.snpc : br_target;
+    assign  pc_o    =   pc;
+    assign  snpc_o  =   snpc;
+    assign  snpc    =   pc + `XLEN'd4;
+    assign  dnpc    =   (pc_op_i == PC_SEQ) ? snpc : br_target;
       
-    assign  temp_target = pc.curpc + imm_i;
+    assign  temp_target = pc + imm_i;
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (~rst_n)
-            pc.curpc <= `PC_RST;
+            pc <= `PC_RST;
         else 
-            pc.curpc <= pc.dnpc;
+            pc <= dnpc;
     end
 
     /* branch unit */
@@ -47,11 +49,11 @@ module ifu import npc_pkg::*; (
                 if (alu_res_i == `XLEN'd1)
                     br_target = temp_target; 
                 else 
-                    br_target = pc.snpc; 
+                    br_target = snpc; 
             end
             PC_JUMP: br_target = temp_target;
             PC_JALR: br_target = alu_res_i & ~`XLEN'd1;     // clear the LSB 
-            default: br_target = pc.snpc;
+            default: br_target = snpc;
         endcase
     end
     
