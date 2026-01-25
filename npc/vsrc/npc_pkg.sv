@@ -62,7 +62,7 @@ package npc_pkg;
     } inst_type_t;
     
     /* Enum define */
-    typedef enum [3:0] {
+    typedef enum logic [3:0] {
         ALU_ADD, ALU_SUB,
         ALU_AND, ALU_OR, ALU_XOR,
         ALU_EQ, ALU_NE, ALU_GE, ALU_GEU,
@@ -70,29 +70,29 @@ package npc_pkg;
         ALU_LT, ALU_LTU
     } alu_op_t;
 
-    typedef enum [2:0] {
+    typedef enum logic [2:0] {
         IMM_I_TYPE, IMM_S_TYPE,
         IMM_B_TYPE, IMM_U_TYPE,
         IMM_J_TYPE
     } imm_op_t;
 
-    typedef enum [1:0] {
+    typedef enum logic [1:0] {
         PC_SEQ, PC_JUMP, PC_JALR, PC_BR
     } pc_update_t;
 
-    typedef enum [1:0] {
+    typedef enum logic [1:0] {
         WB_ALU, WB_MEM, WB_IMM, WB_IFU
     } wb_src_t;
 
-    typedef enum [1:0] {
+    typedef enum logic [1:0] {
         ALU_RS, ALU_IMM, ALU_PC_IMM
     } alu_sel_t;
 
-    typedef enum [2:0] {
+    typedef enum logic [2:0] {
         LD_B, LD_H, LD_W, LD_BU, LD_HU
     } ld_op_t;
 
-    typedef enum [1:0] {
+    typedef enum logic [1:0] {
         ST_B, ST_H, ST_W
     } st_op_t;
 
