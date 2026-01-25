@@ -11,6 +11,7 @@ void (*npc_reset) () = NULL;
 void (*npc_exec_once) (uint32_t inst, uint32_t *snpc, uint32_t *dnpc) = NULL;
 void (*npc_delete) () = NULL;
 void (*npc_update_reg) (uint32_t *regs) = NULL;
+void (*npc_init_mem)(uint32_t (*vrd)(uint32_t addr, int len), void (*vwr)(uint32_t addr, int len, uint32_t data)) = NULL;
 int  (*npc_get_trap_flag) () = NULL;
 
 void init_engine(char *npc_so_file) {
@@ -37,9 +38,13 @@ void init_engine(char *npc_so_file) {
 
   npc_get_trap_flag = dlsym(handle, "npc_get_trap_flag");
   assert(npc_get_trap_flag);
+  
+  npc_init_mem = dlsym(handle, "npc_init_mem");
+  assert(npc_init_mem);
 
   npc_init(0, NULL);
   npc_reset();
+  npc_init_mem(vaddr_read, vaddr_write);
   printf(ANSI_FMT("NPC engine loaded successfully: %s\n", ANSI_FG_GREEN), npc_so_file);
 }
 
@@ -48,6 +53,6 @@ int isa_exec_once(Decode *s) {
   npc_exec_once(s->isa.inst, &s->snpc, &s->dnpc);
   npc_update_reg(cpu.gpr);
   if (npc_get_trap_flag())
-    NEMUTRAP(s->pc,0);
+    NEMUTRAP(s->pc, cpu.gpr[10]);
   return 0;
 }

@@ -71,6 +71,7 @@ __EXPORT void npc_reset() {
 
 __EXPORT void npc_exec_once(uint32_t inst, uint32_t *snpc, uint32_t *dnpc) {
   // execution
+  npc_h->top->sys_en = 1;
   npc_h->top->inst_i = inst;
   npc_h->top->eval();
   Assert(npc_h->top->inst_err == 0, "Instruction is invalid at PC = 0x%08x", npc_h->top->pc_o);
@@ -89,6 +90,7 @@ __EXPORT void npc_exec_once(uint32_t inst, uint32_t *snpc, uint32_t *dnpc) {
 
   // posedge clk
   npc_h->top->clk = 1;
+  npc_h->top->sys_en = 0;
   npc_h->top->eval();   // 更新 pc，寄存器堆等状态
 }
 

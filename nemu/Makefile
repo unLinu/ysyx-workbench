@@ -64,7 +64,7 @@ endif
 
 # Include rules to build NPC
 include $(NPC_HOME)/script/filelist.mk
-include $(NPC_HOME)/script/difftest.mk
+include $(NPC_HOME)/script/build.mk
 
 # Count lines of code
 count:

@@ -23,8 +23,8 @@ package npc_pkg;
 
     typedef struct packed {
         logic [ 6:0] imm_11_5   ;
-        regid_t      rs1        ;
         regid_t      rs2        ;
+        regid_t      rs1        ;
         logic [ 2:0] funct3     ;
         logic [ 4:0] imm_4_0    ;
         logic [ 6:0] opcode     ;

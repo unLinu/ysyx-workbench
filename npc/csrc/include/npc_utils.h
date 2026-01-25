@@ -1,6 +1,10 @@
 #ifndef __NPC_UTILS_HPP__
 #define __NPC_UTILS_HPP__
 
+#include "macro.h" // IWYU pragma: keep
+#include <stdio.h> // IWYU pragma: keep
+#include <string.h> // IWYU pragma: keep
+
 #define ANSI_FG_BLACK   "\33[1;30m"
 #define ANSI_FG_RED     "\33[1;31m"
 #define ANSI_FG_GREEN   "\33[1;32m"

@@ -79,7 +79,7 @@ uint64_t get_time();
 #define REG_FMT_PRINT(reg) \
   printf(ANSI_FMT("%3s", ANSI_FG_CYAN) ": " FMT_WORD " ", reg, gpr(i));
 
-#define FTRACE_FMT_PRINT(depth, type, func, addr) \
+#define FTRACE_FMT_PRINT(depth, type, func, addr, entry_addr) \
   do { \
     printf(ANSI_FMT("[ftrace] ", ANSI_FG_MAGENTA) FMT_PADDR ": ", addr); \
     for (int _k = 0; _k < (depth); _k++) { \
@@ -90,7 +90,7 @@ uint64_t get_time();
     } else { \
       printf(ANSI_FMT("<- ret ", ANSI_FG_YELLOW)); \
     } \
-    printf(ANSI_FMT(" [%s @" FMT_WORD "]", ANSI_FG_CYAN) "\n", func, addr); \
+    printf(ANSI_FMT(" [%s @" FMT_WORD "]", ANSI_FG_CYAN) "\n", func, entry_addr); \
   } while (0)
 
 #define MTRACE_FMT_PRINT(WR, pc, addr, data, len) \

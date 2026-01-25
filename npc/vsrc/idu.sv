@@ -15,6 +15,8 @@ module idu import npc_pkg::*; (
     output  npc_pkg::st_op_t        st_op_o     ,
 
     output  logic                   rf_en_o     ,   // write back enable
+    output  logic                   mem_rden_o  ,   // memory read enable
+    output  logic                   mem_wren_o  ,   // memory write enable
 
     // Go to IFU
     output  npc_pkg::pc_update_t    pc_next     ,
@@ -50,6 +52,8 @@ module idu import npc_pkg::*; (
         alu_sel_o   = ALU_RS        ;
         ld_op_o     = LD_W          ;
         st_op_o     = ST_W          ;
+        mem_rden_o  = 1'b0          ;
+        mem_wren_o  = 1'b0          ;
         pc_next     = PC_SEQ        ;
         inst_err    = 1'b1          ;
         ebreak_o    = 1'b0          ;
@@ -133,7 +137,8 @@ module idu import npc_pkg::*; (
 
                 rs1_o       = inst.i.rs1    ;
                 rd_o        = inst.i.rd     ;
-                rf_en_o     = 1'b0          ;   // 暂时的 
+                rf_en_o     = 1'b1          ;
+                mem_rden_o  = 1'b1          ;
 
                 inst_err    = 1'b0          ;
 
@@ -161,6 +166,7 @@ module idu import npc_pkg::*; (
 
                 rs1_o       = inst.s.rs1    ;
                 rs2_o       = inst.s.rs2    ;
+                mem_wren_o  = 1'b1          ;
 
                 inst_err    = 1'b0          ;
 

@@ -8,6 +8,9 @@ module npc_core import npc_pkg::*; (
     
     // Assertion
     output  logic                       inst_err    ,
+        
+    // System debug
+    input   logic                       sys_en      ,
 
     // Trap
     output  logic                       trap_o      
@@ -34,14 +37,22 @@ module npc_core import npc_pkg::*; (
  
     npc_pkg::regid_t            rs1         ;   // idu -> alu
     npc_pkg::regid_t            rs2         ;   // idu -> alu
-    npc_pkg::regid_t            rd /* verilator public */         ;   // idu -> regfile
+    npc_pkg::regid_t            rd          ;   // idu -> regfile
     npc_pkg::word_t             rs1_data    ;   // regfile -> alu_mux 
     npc_pkg::word_t             rs2_data    ;   // regfile -> alu_mux
-    npc_pkg::word_t             rd_data /* verilator public */    ;   // mem alu ifu -> regfile
+    npc_pkg::word_t             rd_data     ;   // mem alu ifu -> regfile
+    npc_pkg::word_t             mem_rdata   ;   // memory -> regfile_mux
+    npc_pkg::word_t             mem_wdata   ;   // regfile -> memory
+    npc_pkg::word_t             mem_rd_tmp  ;
+    npc_pkg::word_t             mem_raddr   ;
+    npc_pkg::word_t             mem_waddr   ;
 
     npc_pkg::word_t             snpc        ;   // ifu -> regfile_mux
 
     logic                       rf_en       ;   // idu -> regfile
+    logic                       mem_rden    ;   // idu -> memory
+    logic                       mem_wren    ;   // idu -> memory
+    logic   [ 7:0]              mem_wlen    ;
 
 /* ==================================================================== */
 /* ============================= Main Code ============================ */
@@ -75,7 +86,56 @@ module npc_core import npc_pkg::*; (
             WB_ALU: rd_data = alu_res   ;
             WB_IMM: rd_data = imm       ;
             WB_IFU: rd_data = snpc      ; 
-            WB_MEM: rd_data = `XLEN'd0  ;   // 暂时设置为0 
+            WB_MEM: rd_data = mem_rdata ;
+        endcase
+    end
+    
+    ///////////////////
+    /* load data mux */
+    ///////////////////
+    
+    assign mem_raddr = alu_res                                          ;
+    assign mem_rd_tmp = mem_rden && sys_en ? npc_pmem_read(mem_raddr) : mem_rd_tmp ; // Just for verilator
+
+    always_comb begin
+        unique case (ld_op)
+            LD_B:  mem_rdata = {{24{mem_rd_tmp[7]}}, mem_rd_tmp[7:0]}   ;
+            LD_H:  mem_rdata = {{16{mem_rd_tmp[15]}}, mem_rd_tmp[15:0]} ;
+            LD_W:  mem_rdata = mem_rd_tmp                               ;
+            LD_BU: mem_rdata = {24'd0, mem_rd_tmp[7:0]}                 ;
+            LD_HU: mem_rdata = {16'd0, mem_rd_tmp[15:0]}                ;
+            default: mem_rdata = `XLEN'd0                               ;
+        endcase
+    end
+    
+    /* mtrace read log */
+    always_ff @(posedge clk) begin
+        if (mem_rden) begin
+            npc_pmem_readlog(mem_raddr, pc_o, mem_rdata, 
+                             (ld_op == LD_B || ld_op == LD_BU) ? 8'd1 :
+                             (ld_op == LD_H || ld_op == LD_HU) ? 8'd2 :
+                             8'd4);
+        end
+    end
+    
+    ////////////////////
+    /* store data mux */
+    ////////////////////
+    
+    assign mem_waddr = alu_res  ;
+    assign mem_wdata = rs2_data ;
+
+    always_ff @(posedge clk) begin
+        if (mem_wren) begin
+            npc_pmem_write(mem_waddr, mem_wdata, mem_wlen);
+        end
+    end
+    
+    always_comb begin
+        unique case (st_op)
+            ST_B: mem_wlen = 8'd1      ;
+            ST_H: mem_wlen = 8'd2      ;
+            ST_W: mem_wlen = 8'd4      ;
         endcase
     end
 
@@ -114,6 +174,8 @@ module npc_core import npc_pkg::*; (
         .alu_sel_o 	(alu_sel    ),
         .ld_op_o   	(ld_op      ),
         .st_op_o   	(st_op      ),
+        .mem_rden_o (mem_rden   ),
+        .mem_wren_o (mem_wren   ),
         .rf_en_o    (rf_en      ),
         .pc_next   	(pc_op      ),
         .inst_err  	(inst_err   ),
