@@ -106,6 +106,18 @@ uint64_t get_time();
     } \
   } while (0)
 
+#define CHECK_DEVICE(name, ref) strcmp(name, ref) == 0
+#define DTRACE_FMT_PRINT(dev) \
+  do { \
+    if (CHECK_DEVICE(dev->name, "serial")) { IFNDEF(CONFIG_DTRACE_SERIAL, break);} \
+    else if (CHECK_DEVICE(dev->name, "rtc")) { IFNDEF(CONFIG_DTRACE_TIMER, break);} \
+    else if (CHECK_DEVICE(dev->name, "vgactl") || CHECK_DEVICE(dev->name, "vmem")) { IFNDEF(CONFIG_DTRACE_VGA, break);} \
+    else if (CHECK_DEVICE(dev->name, "keyboard")) { IFNDEF(CONFIG_DTRACE_KEYBOARD, break);} \
+    else if (CHECK_DEVICE(dev->name, "audio") || CHECK_DEVICE(dev->name, "audio-sbuf")) { IFNDEF(CONFIG_DTRACE_AUDIO, break);} \
+    else { break; } \
+    printf(ANSI_FMT("[dtrace]", ANSI_FG_MAGENTA) " %s\t@ " FMT_PADDR " ~ " FMT_PADDR "\n", dev->name, dev->low, dev->high); \
+  } while(0); 
+
 #define IRINGBUF_SIZE 10 
 
 typedef struct {

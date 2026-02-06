@@ -74,8 +74,27 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
         int num = va_arg(ap, int);
         fill_buf(out, &len, num, width, base);
       }
+      // %nd, max n = 99
+      else if (fmt[i] >= '1' && fmt[i] <= '9') {
+        int base = 0;
+        int width = fmt[i+1] == 'd' || fmt[i+1] == 'x' ? fmt[i] - '0' : (fmt[i] - '0') * 10 + (fmt[i+1] - '0');
+        if (width >= 10) {
+          base = fmt[i+2] == 'd' ? 10 : 16;
+          i += 2;
+        }
+        else {
+          base = fmt[i+1] == 'd' ? 10 : 16;
+          i += 1;
+        }
+
+        int num = va_arg(ap, int);
+        fill_buf(out, &len, num, width, base);
+      }
       else {
-        panic("Unsupported argument.");
+        putstr("Unsupported format after %: ");
+        putch(fmt[i]);
+        putch('\n');
+        panic("");
       }
     } 
     else {

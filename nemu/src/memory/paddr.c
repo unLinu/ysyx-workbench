@@ -52,10 +52,9 @@ void init_mem() {
 }
 
 word_t paddr_read(paddr_t addr, int len) {
+  IFNDEF(CONFIG_ENGINE_NPC, IFDEF(CONFIG_MTRACE, MTRACE_FMT_PRINT("READ", cpu.pc, addr, rd_data, len));)  // NPC 中取指令不必调用 mtrace
   if (likely(in_pmem(addr))) {
     word_t rd_data = pmem_read(addr, len);
-    IFDEF(CONFIG_ENGINE_NPC, return rd_data; )  // NPC 中取指令不必调用 mtrace
-    IFDEF(CONFIG_MTRACE, MTRACE_FMT_PRINT("READ", cpu.pc, addr, rd_data, len));
     return rd_data; 
   } 
 

@@ -157,7 +157,7 @@ config ITRACE
 config MTRACE
   depends on TRACE 
   bool "Enable memory tracer"
-  default y
+  default n
 
 config MTRACE_START
   depends on MTRACE
@@ -172,7 +172,41 @@ config MTRACE_END
 config FTRACE
   depends on TRACE && TARGET_NATIVE_ELF
   bool "Enable function tracer"
-  default y
+  default n
+
+menuconfig DTRACE
+  depends on TRACE && TARGET_NATIVE_ELF
+  bool "Enable device tracer"
+  default n
+
+if DTRACE
+
+config DTRACE_SERIAL
+  depends on DTRACE
+  bool "Enable serial device tracer"
+  default n
+
+config DTRACE_TIMER
+  depends on DTRACE
+  bool "Enable timer device tracer"
+  default n
+
+config DTRACE_KEYBOARD
+  depends on DTRACE
+  bool "Enable keyboard device tracer"
+  default n
+
+config DTRACE_VGA
+  depends on DTRACE
+  bool "Enable VGA device tracer"
+  default n
+
+config DTRACE_AUDIO
+  depends on DTRACE
+  bool "Enable audio device tracer"
+  default n
+
+endif
 
 config ITRACE_COND
   depends on ITRACE
