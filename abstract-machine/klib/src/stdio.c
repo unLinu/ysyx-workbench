@@ -16,57 +16,73 @@ int printf(const char *fmt, ...) {
   return ret;
 }
 
+void fill_buf(char *out, size_t *len, int num, int width, int base) {
+  unsigned long val = 0;
+  if (num < 0 && base == 10) {out[(*len)++] = '-'; val = -(unsigned long)num;}
+  else {val = num;}
+
+  char buf[1024];
+  int num_len = 0;
+  do {
+    buf[num_len++] = (val % base) + (val % base < 10 ? '0' : 'a' - 10);
+    val /= base;
+  } while (val > 0);
+
+  if (width > num_len) {
+    for (int i = 0; i < width - num_len; i++) {
+      out[(*len)++] = '0';
+    }
+  }
+  for (int k = 0; k < num_len; k++)
+    out[(*len)++] = buf[num_len - 1 - k];
+}
+
 int vsprintf(char *out, const char *fmt, va_list ap) {
   size_t len = 0;
-  while (*fmt != '\0') {
-    if (*fmt == '%') {
-      fmt++; // point to the character after '%'
-      switch (*fmt++) {
-      case 's': {
+  for (int i = 0; fmt[i]; i++) {
+    if (fmt[i] == '%') {
+      i++;
+      if (fmt[i] == 'c') {
+        out[len++] = (char)va_arg(ap, int);
+      } 
+      else if (fmt[i] == 's') {
         char *s = va_arg(ap, char *);
-        size_t slen = strlen(s);
-        strncpy(out + len, s, slen);
-        len += slen;
-        break;
+        for (int j = 0; s[j]; j++) 
+          out[len++] = s[j];
+      } 
+      else if (fmt[i] == 'd') {
+        int dec = va_arg(ap, int);
+        fill_buf(out, &len, dec, 0, 10);
       }
-      case 'd': {
+      else if (fmt[i] == 'x') {
+        int hex = va_arg(ap, int);
+        fill_buf(out, &len, hex, 0, 16);
+      }
+      // %0nd, max n = 99
+      else if (fmt[i] == '0') {
+        int base = 0;
+        int width = fmt[i+2] == 'd' || fmt[i+2] == 'x' ? fmt[i+1] - '0' : (fmt[i+1] - '0') * 10 + (fmt[i+2] - '0');
+        if (width >= 10) {
+          base = fmt[i+3] == 'd' ? 10 : 16;
+          i += 3;
+        }
+        else {
+          base = fmt[i+2] == 'd' ? 10 : 16;
+          i += 2;
+        }
+
         int num = va_arg(ap, int);
-        char buf[1024];
-        size_t i, j;
-        int num_len = 0;
-
-        if (num == 0) {
-          out[len++] = '0';
-          break;
-        }
-        unsigned int val = (unsigned int)num;
-        if (num < 0) {
-          out[len++] = '-';
-          val = -(unsigned int)(num);  // 防止溢出
-        }
-
-        j = 0;
-        while (val != 0) {
-          buf[j++] = val % 10;
-          val /= 10;
-          num_len++;
-        }
-
-        for (i = 0; i < num_len; i++) {
-          out[len++] = buf[--j] + '0';
-        }
-        break;
+        fill_buf(out, &len, num, width, base);
       }
-      default:
-        panic("Invalid argument.");
-        break;
+      else {
+        panic("Unsupported argument.");
       }
-    } else {
-      out[len++] = *fmt++;
+    } 
+    else {
+      out[len++] = fmt[i];
     }
   }
   out[len] = '\0';
-
   return len;
 }
 
