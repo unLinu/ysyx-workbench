@@ -13,9 +13,11 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include <SDL2/SDL_audio.h>
 #include <common.h>
 #include <device/map.h>
 #include <SDL2/SDL.h>
+#include <stdint.h>
 
 enum {
   reg_freq,
@@ -30,12 +32,59 @@ enum {
 static uint8_t *sbuf = NULL;
 static uint32_t *audio_base = NULL;
 
+static void audio_callback(void *userdata, uint8_t *stream, int len) {
+  assert(audio_base[reg_count] <= CONFIG_SB_SIZE);
+  static int rptr = 0;
+  int nread = len;
+  if (audio_base[reg_count] < nread) {
+    nread = audio_base[reg_count];
+    for (int i = nread; i < len; i++) {
+      stream[i] = 0;
+    }
+  }
+  if (rptr + nread <= CONFIG_SB_SIZE) {
+    memcpy(stream, sbuf + rptr, nread);
+  }
+  else {
+    int remain = CONFIG_SB_SIZE - rptr;
+    memcpy(stream, sbuf + rptr, remain);
+    memcpy(stream + remain, sbuf, nread - remain);
+  }
+  rptr = (rptr + nread) % CONFIG_SB_SIZE;
+  audio_base[reg_count] -= nread;
+}
+
 static void audio_io_handler(uint32_t offset, int len, bool is_write) {
+  assert(offset % 4 == 0 && offset / 4 < nr_reg);
+  if (audio_base[reg_init]) {
+    SDL_AudioSpec s = {};
+    s.format = AUDIO_S16SYS;
+    s.userdata = NULL;
+    s.freq = audio_base[reg_freq];
+    s.channels = audio_base[reg_channels];
+    s.samples = audio_base[reg_samples];
+    s.callback = audio_callback;
+
+    SDL_InitSubSystem(SDL_INIT_AUDIO);
+    SDL_OpenAudio(&s, NULL);
+    SDL_PauseAudio(0);
+    audio_base[reg_init] = 0;
+  }
+}
+
+static void audio_sbuf_handler(uint32_t offset, int len, bool is_write) {
+  assert(offset < CONFIG_SB_SIZE);
+  if (is_write) {
+    SDL_LockAudio();
+    audio_base[reg_count] += len;
+    SDL_UnlockAudio();
+  }
 }
 
 void init_audio() {
   uint32_t space_size = sizeof(uint32_t) * nr_reg;
   audio_base = (uint32_t *)new_space(space_size);
+  audio_base[reg_sbuf_size] = CONFIG_SB_SIZE;
 #ifdef CONFIG_HAS_PORT_IO
   add_pio_map ("audio", CONFIG_AUDIO_CTL_PORT, audio_base, space_size, audio_io_handler);
 #else
@@ -43,5 +92,5 @@ void init_audio() {
 #endif
 
   sbuf = (uint8_t *)new_space(CONFIG_SB_SIZE);
-  add_mmio_map("audio-sbuf", CONFIG_SB_ADDR, sbuf, CONFIG_SB_SIZE, NULL);
+  add_mmio_map("audio-sbuf", CONFIG_SB_ADDR, sbuf, CONFIG_SB_SIZE, audio_sbuf_handler);
 }
