@@ -45,7 +45,8 @@ void init_engine(char *npc_so_file) {
   npc_init(0, NULL);
   npc_reset();
   npc_init_mem(vaddr_read, vaddr_write);
-  printf(ANSI_FMT("NPC engine loaded successfully: %s\n", ANSI_FG_GREEN), npc_so_file);
+  printf(ANSI_FMT("NPC engine loaded successfully: %s", ANSI_FG_GREEN) "\n", npc_so_file);
+  fflush(stdout);
 }
 
 int isa_exec_once(Decode *s) {
