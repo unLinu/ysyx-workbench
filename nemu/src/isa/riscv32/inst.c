@@ -13,6 +13,7 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include "isa.h"
 #include "local-include/reg.h"
 #include <cpu/cpu.h>
 #include <cpu/ifetch.h>
@@ -123,6 +124,11 @@ static int decode_exec(Decode *s) {
   INSTPAT("0000001 ????? ????? 101 ????? 01100 11", divu   , R, R(rd) = src2 != 0 ? src1 / src2 : -1);
   INSTPAT("0000001 ????? ????? 110 ????? 01100 11", rem    , R, R(rd) = src2 != 0 ? ((src1 == INT32_MIN && src2 == -1) ? 0 : (word_t)((sword_t)src1 % (sword_t)src2)) : src1);
   INSTPAT("0000001 ????? ????? 111 ????? 01100 11", remu   , R, R(rd) = src2 != 0 ? src1 % src2 : src1);
+
+  INSTPAT("??????? ????? ????? 001 ????? 11100 11", csrrw  , I, R(rd) = csr(imm); csr(imm) = src1);
+  INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrs  , I, csr(imm) = csr(imm) | src1; R(rd) = csr(imm));
+  INSTPAT("0011000 00010 00000 000 00000 11100 11", mret   , R, s->dnpc = csr(MEPC); csr(MSTATUS) &= ~0x1800; csr(MSTATUS) |= 0x80);
+  INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall  , I, s->dnpc = isa_raise_intr(11, s->pc));
 
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , N, NEMUTRAP(s->pc, R(10))); // R(10) is $a0
   INSTPAT("??????? ????? ????? ??? ????? ????? ??", inv    , N, INV(s->pc));

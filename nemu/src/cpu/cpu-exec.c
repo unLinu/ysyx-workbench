@@ -13,6 +13,7 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include <assert.h>
 #include <cpu/cpu.h>
 #include <cpu/decode.h>
 #include <cpu/difftest.h>
@@ -103,7 +104,7 @@ static void statistic() {
 
 void assert_fail_msg() {
   isa_reg_display();
-  iringbuf_display();
+  IFDEF(CONFIG_ITRACE, iringbuf_display());
   statistic();
 }
 

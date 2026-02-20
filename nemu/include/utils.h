@@ -118,6 +118,11 @@ uint64_t get_time();
     printf(ANSI_FMT("[dtrace]", ANSI_FG_MAGENTA) " %s\t@ " FMT_PADDR " ~ " FMT_PADDR "\n", dev->name, dev->low, dev->high); \
   } while(0); 
 
+#define ETRACE_FMT_PRINT(epc) \
+  do { \
+    printf(ANSI_FMT("[etrace]", ANSI_FG_MAGENTA) " EPC: " FMT_WORD "\n", epc); \
+  } while(0)
+
 #define IRINGBUF_SIZE 10 
 
 typedef struct {
