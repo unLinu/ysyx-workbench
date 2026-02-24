@@ -90,6 +90,21 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
         int num = va_arg(ap, int);
         fill_buf(out, &len, num, width, base);
       }
+      // %ld, %lx
+      else if (fmt[i] == 'l') {
+        int base = 0;
+        i++;
+        if (fmt[i] == 'd') {
+          base = 10;
+          long dec = va_arg(ap, long);
+          fill_buf(out, &len, dec, 0, base);
+        }
+        else if (fmt[i] == 'x') {
+          base = 16;
+          unsigned long hex = va_arg(ap, unsigned long);
+          fill_buf(out, &len, hex, 0, base);
+        }
+      }
       else {
         putstr("Unsupported format after %: ");
         putch(fmt[i]);
