@@ -9,6 +9,8 @@ module ifu import npc_pkg::*; (
     // data
     input   npc_pkg::word_t             imm_i       ,   // from imm_gen
     input   npc_pkg::word_t             alu_res_i   ,
+    input   npc_pkg::word_t             mtvec_i     ,   // from csr
+    input   npc_pkg::word_t             mepc_i      ,   // from csr
 
     output  npc_pkg::word_t             pc_o        ,
     output  npc_pkg::word_t             snpc_o          // always curpc+4
@@ -51,11 +53,12 @@ module ifu import npc_pkg::*; (
                 else 
                     br_target = snpc; 
             end
-            PC_JUMP: br_target = temp_target;
-            PC_JALR: br_target = alu_res_i & ~`XLEN'd1;     // clear the LSB 
-            default: br_target = snpc;
+            PC_JUMP:  br_target = temp_target;
+            PC_JALR:  br_target = alu_res_i & ~`XLEN'd1;     // clear the LSB 
+            PC_ECALL: br_target = mtvec_i;
+            PC_MRET:  br_target = mepc_i;
+            default:  br_target = snpc;
         endcase
     end
-    
 
 endmodule

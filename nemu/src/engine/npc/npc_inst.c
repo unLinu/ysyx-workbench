@@ -1,3 +1,4 @@
+#include "isa.h"
 #include <cpu/cpu.h>
 #include <cpu/decode.h>
 #include <cpu/ifetch.h>
@@ -10,7 +11,7 @@ void (*npc_init) (int argc, char **argv) = NULL;
 void (*npc_reset) () = NULL;
 void (*npc_exec_once) (uint32_t inst, uint32_t *snpc, uint32_t *dnpc) = NULL;
 void (*npc_delete) () = NULL;
-void (*npc_update_reg) (uint32_t *regs) = NULL;
+void (*get_regs_from_npc) (CPU_state *dut) = NULL;
 void (*npc_init_mem)(uint32_t (*vrd)(uint32_t addr, int len), void (*vwr)(uint32_t addr, int len, uint32_t data)) = NULL;
 int  (*npc_get_trap_flag) () = NULL;
 
@@ -33,8 +34,8 @@ void init_engine(char *npc_so_file) {
   npc_delete = dlsym(handle, "npc_delete");
   assert(npc_delete);
 
-  npc_update_reg = dlsym(handle, "npc_update_reg");
-  assert(npc_update_reg);
+  get_regs_from_npc = dlsym(handle, "npc_update_reg");
+  assert(get_regs_from_npc);
 
   npc_get_trap_flag = dlsym(handle, "npc_get_trap_flag");
   assert(npc_get_trap_flag);
@@ -52,7 +53,7 @@ void init_engine(char *npc_so_file) {
 int isa_exec_once(Decode *s) {
   s->isa.inst = vaddr_ifetch(s->snpc, 4);
   npc_exec_once(s->isa.inst, &s->snpc, &s->dnpc);
-  npc_update_reg(cpu.gpr);
+  get_regs_from_npc(&cpu);
   if (npc_get_trap_flag())
     NEMUTRAP(s->pc, cpu.gpr[10]);
   return 0;

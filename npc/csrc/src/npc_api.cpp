@@ -3,6 +3,7 @@
 #include "Vnpc_core_ifu.h"
 #include "Vnpc_core_npc_core.h"
 #include "Vnpc_core_regfile.h"
+#include "Vnpc_core_csr.h"
 #include "../include/macro.h"
 #include <assert.h>
 #include <cstdint>
@@ -19,13 +20,25 @@ typedef struct {
     MUXDEF(FST, VerilatedFstC*, VerilatedVcdC*) tfp;
 } NPCHandle;
 
+typedef struct {
+  uint32_t gpr[32];
+  uint32_t pc;
+  // csr 
+  uint32_t mcause, mstatus, mepc, mtvec;
+} diff_context_t;
+
 static NPCHandle *npc_h = nullptr;
 const static int RESET_TIME = 10;
 
-static inline void npc_regcpy(uint32_t *regs, const uint32_t *npc_gpr) {
+static inline void npc_regcpy(diff_context_t *dut, Vnpc_core_npc_core *const npc_core) {
   for (int i = 0; i < 32; i++) {
-    regs[i] = npc_gpr[i];
+    dut->gpr[i] = npc_core->u_regfile->gpr[i];
   }
+  // csr
+  dut->mcause = npc_core->u_csr->mcause;
+  dut->mstatus = npc_core->u_csr->mstatus;
+  dut->mepc = npc_core->u_csr->mepc;
+  dut->mtvec = npc_core->u_csr->mtvec;
 }
 
 extern "C" {
@@ -105,9 +118,9 @@ __EXPORT void npc_delete() {
   }
 }
 
-__EXPORT void npc_update_reg(uint32_t *regs) {
-  const auto gpr = &npc_h->top->npc_core->u_regfile->gpr;
-  npc_regcpy(regs, &(*gpr)[0]);
+__EXPORT void npc_update_reg(diff_context_t *regs) {
+  const auto npc_core = npc_h->top->npc_core;
+  npc_regcpy(regs, npc_core);
 }
 
 } // extern "C"

@@ -13,8 +13,10 @@ module idu import npc_pkg::*; (
     output  npc_pkg::alu_sel_t      alu_sel_o   ,
     output  npc_pkg::ld_op_t        ld_op_o     ,
     output  npc_pkg::st_op_t        st_op_o     ,
+    output  npc_pkg::csr_op_t       csr_op_o    ,
 
     output  logic                   rf_en_o     ,   // write back enable
+    output  logic                   csr_en_o    ,   // csr write enable
     output  logic                   mem_rden_o  ,   // memory read enable
     output  logic                   mem_wren_o  ,   // memory write enable
 
@@ -24,8 +26,10 @@ module idu import npc_pkg::*; (
     // Instruction Invalid
     output  logic                   inst_err    ,
     
-    // Trap Flag
-    output  logic                   ebreak_o   
+    // System signal
+    output  logic                   ebreak_o    ,
+    output  logic                   ecall_o     ,
+    output  logic                   mret_o
 );
 
 
@@ -46,6 +50,7 @@ module idu import npc_pkg::*; (
         rs2_o       = `RLEN'd0      ;
         rd_o        = `RLEN'd0      ;
         rf_en_o     = 1'b0          ;
+        csr_en_o    = 1'b0          ;
         alu_op_o    = ALU_ADD       ;
         imm_op_o    = IMM_I_TYPE    ;
         wb_src_o    = WB_ALU        ;
@@ -57,6 +62,8 @@ module idu import npc_pkg::*; (
         pc_next     = PC_SEQ        ;
         inst_err    = 1'b1          ;
         ebreak_o    = 1'b0          ;
+        ecall_o     = 1'b0          ;
+        mret_o      = 1'b0          ;
 
         unique case (inst.r.opcode)
         
@@ -272,15 +279,45 @@ module idu import npc_pkg::*; (
             end
 
             ////////////
-            /* EBREAK */
+            /* SYSTEM */
             ////////////
             7'h73: begin
-                if (inst.i.funct3 == 3'h0 && inst.i.imm == 12'h1) begin
-                    inst_err  = 1'b0 ;    
-                    ebreak_o  = 1'b1 ;
-                end
-                else 
-                    inst_err  = 1'b1 ;
+                imm_op_o    = IMM_I_TYPE    ;
+                wb_src_o    = WB_CSR        ;
+
+                rd_o        = inst.i.rd     ;
+                rf_en_o     = 1'b1          ;
+                rs1_o       = inst.i.rs1    ;
+                csr_en_o    = 1'b1          ;
+
+                inst_err    = 1'b0          ;
+
+                unique case (inst.i.funct3)
+                    3'h1:   csr_op_o = CSR_W;                       // csrrw
+                    3'h2:   csr_op_o = CSR_S;                       // csrrs
+                    3'h0: begin
+                        inst_err = 1'b0     ;
+                        rf_en_o  = 1'b0     ; 
+                        csr_en_o = 1'b0     ;
+                        if (inst.raw == `XLEN'h00100073) begin      // ebreak
+                            ebreak_o = 1'b1 ;
+                        end
+                        else if (inst.raw == `XLEN'h00000073) begin // ecall
+                            ecall_o  = 1'b1 ;
+                            pc_next  = PC_ECALL;
+                        end
+                        else if (inst.raw == `XLEN'h30200073) begin // mret
+                            mret_o   = 1'b1 ;
+                            pc_next  = PC_MRET ;
+                        end
+                        else begin
+                            inst_err = 1'b1 ;
+                        end
+                    end
+                    default: begin
+                        inst_err = 1'b1     ;
+                    end
+                endcase
             end
 
             default: inst_err = 1'b1 ;

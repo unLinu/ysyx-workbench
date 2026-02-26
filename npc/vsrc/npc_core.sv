@@ -29,6 +29,7 @@ module npc_core import npc_pkg::*; (
     npc_pkg::alu_sel_t          alu_sel     ;   // idu -> alu_mux
     npc_pkg::ld_op_t            ld_op       ;   // idu -> ld_mux
     npc_pkg::st_op_t            st_op       ;   // idu -> st_mux
+    npc_pkg::csr_op_t           csr_op      ;   // idu -> csr
 
     npc_pkg::word_t             imm         ;   // imm_gen -> ifu alu_mux regfile_mux   
     npc_pkg::word_t             alu_src1    ;   // regfile -> alu
@@ -46,10 +47,16 @@ module npc_core import npc_pkg::*; (
     npc_pkg::word_t             mem_rd_tmp  ;
     npc_pkg::word_t             mem_raddr   ;
     npc_pkg::word_t             mem_waddr   ;
+    npc_pkg::word_t             csr_data    ;   // csr -> regfile_mux
+    npc_pkg::word_t             mepc        ;   // csr -> ifu
+    npc_pkg::word_t             mtvec       ;   // csr -> ifu
 
     npc_pkg::word_t             snpc        ;   // ifu -> regfile_mux
+    logic                       ecall       ;   // idu -> csr
+    logic                       mret        ;   // idu -> csr
 
     logic                       rf_en       ;   // idu -> regfile
+    logic                       csr_en      ;   // idu -> csr
     logic                       mem_rden    ;   // idu -> memory
     logic                       mem_wren    ;   // idu -> memory
     logic   [ 7:0]              mem_wlen    ;
@@ -83,10 +90,12 @@ module npc_core import npc_pkg::*; (
     /////////////////
     always_comb begin
         unique case (wb_src)
-            WB_ALU: rd_data = alu_res   ;
-            WB_IMM: rd_data = imm       ;
-            WB_IFU: rd_data = snpc      ; 
-            WB_MEM: rd_data = mem_rdata ;
+            WB_ALU:  rd_data = alu_res   ;
+            WB_IMM:  rd_data = imm       ;
+            WB_IFU:  rd_data = snpc      ; 
+            WB_MEM:  rd_data = mem_rdata ;
+            WB_CSR:  rd_data = csr_data  ;
+            default: rd_data = `XLEN'd0  ;
         endcase
     end
     
@@ -159,6 +168,8 @@ module npc_core import npc_pkg::*; (
         .pc_op_i   	(pc_op      ),
         .imm_i     	(imm        ),
         .alu_res_i 	(alu_res    ),
+        .mepc_i    	(mepc       ),
+        .mtvec_i   	(mtvec      ),
         .pc_o      	(pc_o       ),
         .snpc_o    	(snpc       )
     );
@@ -174,12 +185,16 @@ module npc_core import npc_pkg::*; (
         .alu_sel_o 	(alu_sel    ),
         .ld_op_o   	(ld_op      ),
         .st_op_o   	(st_op      ),
+        .csr_op_o  	(csr_op     ),
         .mem_rden_o (mem_rden   ),
         .mem_wren_o (mem_wren   ),
         .rf_en_o    (rf_en      ),
+        .csr_en_o   (csr_en     ),
         .pc_next   	(pc_op      ),
         .inst_err  	(inst_err   ),
-        .ebreak_o   (trap_o     )
+        .ebreak_o   (trap_o     ),
+        .ecall_o    (ecall      ),
+        .mret_o     (mret       )
     );
 
     imm_gen u_imm_gen (
@@ -197,7 +212,6 @@ module npc_core import npc_pkg::*; (
     
     regfile u_regfile (
         .clk        	(clk         ),
-        .rst_n      	(rst_n       ),
         .rs1_i      	(rs1         ),
         .rs2_i      	(rs2         ),
         .rd_i       	(rd          ),
@@ -205,6 +219,21 @@ module npc_core import npc_pkg::*; (
         .rd_data_i  	(rd_data     ),
         .rs1_data_o 	(rs1_data    ),
         .rs2_data_o 	(rs2_data    )
+    );
+    
+    csr u_csr(
+        .clk        	(clk         ),
+        .rst_n      	(rst_n       ),
+        .pc_i       	(pc_o        ),
+        .csr_addr_i 	(imm[11:0]   ),
+        .rs1_data_i 	(rs1_data    ),
+        .wr_en_i    	(csr_en      ),
+        .csr_op_i   	(csr_op      ),
+        .ecall_i    	(ecall       ),
+        .mret_i     	(mret        ),
+        .csr_data_o 	(csr_data    ),
+        .mepc_o     	(mepc        ),
+        .mtvec_o    	(mtvec       )
     );
     
 endmodule

@@ -76,12 +76,12 @@ package npc_pkg;
         IMM_J_TYPE
     } imm_op_t;
 
-    typedef enum logic [1:0] {
-        PC_SEQ, PC_JUMP, PC_JALR, PC_BR
+    typedef enum logic [2:0] {
+        PC_SEQ, PC_JUMP, PC_JALR, PC_BR, PC_ECALL, PC_MRET
     } pc_update_t;
 
-    typedef enum logic [1:0] {
-        WB_ALU, WB_MEM, WB_IMM, WB_IFU
+    typedef enum logic [2:0] {
+        WB_ALU, WB_MEM, WB_IMM, WB_IFU, WB_CSR
     } wb_src_t;
 
     typedef enum logic [1:0] {
@@ -95,5 +95,13 @@ package npc_pkg;
     typedef enum logic [1:0] {
         ST_B, ST_H, ST_W
     } st_op_t;
+    
+    typedef enum logic [11:0] {
+        MSTATUS = 12'h300, MEPC = 12'h341, MCAUSE = 12'h342, MTVEC = 12'h305
+    } csr_addr_t;
+    
+    typedef enum logic [0:0] {
+        CSR_W, CSR_S
+    } csr_op_t;
 
 endpackage
