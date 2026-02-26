@@ -30,6 +30,9 @@ $(NPC_LIB): verilating
 
 shared: $(NPC_LIB)
 
+wave:
+	$(WAVEVIEWER) $(BUILD_DIR)/simx.vcd
+
 sim:
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 

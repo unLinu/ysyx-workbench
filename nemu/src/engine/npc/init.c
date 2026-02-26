@@ -14,14 +14,23 @@
 ***************************************************************************************/
 
 #include <cpu/cpu.h>
-
-char *npc_so_file = "/home/lu/Workspace/repo/ysyx-workbench/npc/build/obj_dir/libnpc.so";
+#include <stdio.h>
+#include <stdlib.h>
 
 void sdb_mainloop();
 void init_engine(char *npc_so_file);
 extern void (*npc_delete)();
 
 void engine_start() {
+  char npc_so_file[256];
+  char *NPC_HOME = getenv("NPC_HOME");
+  if (NPC_HOME != NULL) { 
+    snprintf(npc_so_file, sizeof(npc_so_file), "%s/build/obj_dir/libnpc.so", NPC_HOME); 
+  }
+  else { 
+    panic("Can't find NPC_HOME environment variable"); 
+  }
+
   init_engine(npc_so_file);
 #ifdef CONFIG_TARGET_AM
   cpu_exec(-1);

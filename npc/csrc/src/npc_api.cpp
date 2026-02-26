@@ -8,6 +8,8 @@
 #include <assert.h>
 #include <cstdint>
 #include <stdint.h>
+#include <string>
+#include <stdlib.h>
 #ifdef FST
 #include "verilated_fst_c.h"
 #else
@@ -44,6 +46,9 @@ static inline void npc_regcpy(diff_context_t *dut, Vnpc_core_npc_core *const npc
 extern "C" {
 
 __EXPORT void npc_init(int argc, char **argv) {
+  const char *NPC_HOME = getenv("NPC_HOME");
+  if (NPC_HOME == nullptr) { panic("Can't find NPC_HOME environment variable"); }
+  std::string wave_path = std::string(NPC_HOME) + "/build/simx";
   VerilatedContext *contextp = new VerilatedContext;
   contextp->commandArgs(argc, argv);
   Vnpc_core *top = new Vnpc_core{contextp};
@@ -51,11 +56,11 @@ __EXPORT void npc_init(int argc, char **argv) {
 #ifdef FST
   VerilatedFstC *tfp = new VerilatedFstC;
   top->trace(tfp, 99);
-  tfp->open("build/obj_dir/simx.fst");
+  tfp->open((wave_path + ".fst").c_str());
 #else
   VerilatedVcdC *tfp = new VerilatedVcdC;
   top->trace(tfp, 99);
-  tfp->open("build/obj_dir/simx.vcd");
+  tfp->open((wave_path + ".vcd").c_str());
 #endif
 
   npc_h = new NPCHandle{contextp, top, tfp};
@@ -84,7 +89,6 @@ __EXPORT void npc_reset() {
 
 __EXPORT void npc_exec_once(uint32_t inst, uint32_t *snpc, uint32_t *dnpc) {
   // execution
-  npc_h->top->sys_en = 1;
   npc_h->top->inst_i = inst;
   npc_h->top->eval();
   Assert(npc_h->top->inst_err == 0, "Instruction is invalid at PC = 0x%08x", npc_h->top->pc_o);
@@ -103,7 +107,6 @@ __EXPORT void npc_exec_once(uint32_t inst, uint32_t *snpc, uint32_t *dnpc) {
 
   // posedge clk
   npc_h->top->clk = 1;
-  npc_h->top->sys_en = 0;
   npc_h->top->eval();   // 更新 pc，寄存器堆等状态
 }
 

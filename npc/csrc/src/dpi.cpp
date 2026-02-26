@@ -25,16 +25,6 @@ int npc_pmem_read(int raddr) {
   return ret;
 }
 
-void npc_pmem_readlog(int raddr, int pc, int data, char len) {
-#ifdef CONFIG_MTRACE
-  if (raddr >= CONFIG_MTRACE_START && raddr <= CONFIG_MTRACE_END) {
-    printf(ANSI_FMT("[mtrace]", ANSI_FG_MAGENTA));
-    printf(" PC: 0x%08x " ANSI_FMT("READ", ANSI_FG_GREEN), pc);
-    printf("  Addr: 0x%08x Data: 0x%08x Len: %d\n", raddr, data, len);
-  }
-#endif
-}
-
 void npc_pmem_write(int waddr, int wdata, char wlen) {
   vaddr_write((uint32_t)waddr, (int)wlen, (uint32_t)wdata);
 }

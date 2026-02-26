@@ -8,9 +8,6 @@ module npc_core import npc_pkg::*; (
     
     // Assertion
     output  logic                       inst_err    ,
-        
-    // System debug
-    input   logic                       sys_en      ,
 
     // Trap
     output  logic                       trap_o      
@@ -104,7 +101,11 @@ module npc_core import npc_pkg::*; (
     ///////////////////
     
     assign mem_raddr = alu_res                                          ;
-    assign mem_rd_tmp = mem_rden && sys_en ? npc_pmem_read(mem_raddr) : mem_rd_tmp ; // Just for verilator
+    // Just for verilator
+    always_ff @(negedge clk) begin : Simulation
+      if (mem_rden)
+        mem_rd_tmp <= npc_pmem_read(mem_raddr);
+    end
 
     always_comb begin
         unique case (ld_op)
@@ -116,17 +117,7 @@ module npc_core import npc_pkg::*; (
             default: mem_rdata = `XLEN'd0                               ;
         endcase
     end
-    
-    /* mtrace read log */
-    always_ff @(posedge clk) begin
-        if (mem_rden) begin
-            npc_pmem_readlog(mem_raddr, pc_o, mem_rdata, 
-                             (ld_op == LD_B || ld_op == LD_BU) ? 8'd1 :
-                             (ld_op == LD_H || ld_op == LD_HU) ? 8'd2 :
-                             8'd4);
-        end
-    end
-    
+   
     ////////////////////
     /* store data mux */
     ////////////////////
