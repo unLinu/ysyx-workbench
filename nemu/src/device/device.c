@@ -31,6 +31,7 @@ void init_sdcard();
 void init_alarm();
 
 void send_key(uint8_t, bool);
+void send_ch(int ch_code);
 void vga_update_screen();
 
 void device_update() {
@@ -62,6 +63,11 @@ void device_update() {
 #endif
       default: break;
     }
+  }
+  // serial input
+  int ch = fgetc(stdin);
+  if (ch != EOF) {
+    send_ch(ch);
   }
 #endif
 }

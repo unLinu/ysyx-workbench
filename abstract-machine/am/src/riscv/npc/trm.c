@@ -18,6 +18,13 @@ void putch(char ch) {
   outb(SERIAL_PORT, ch);
 }
 
+int getch() {
+  if ((inb(SERIAL_PORT + 0x5) & 0x1) == 0) {
+    return -1; // no data available
+  }
+  return inb(SERIAL_PORT);
+}
+
 void halt(int code) {
   npc_trap(code);
 

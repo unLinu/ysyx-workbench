@@ -20,8 +20,8 @@ void npc_trap() {
   trap_flag = 1;
 }
 
-int npc_pmem_read(int raddr) {
-  uint32_t ret = vaddr_read((uint32_t)raddr, 4);
+int npc_pmem_read(int raddr, char rlen) {
+  uint32_t ret = vaddr_read((uint32_t)raddr, rlen);
   return ret;
 }
 

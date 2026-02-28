@@ -57,6 +57,7 @@ module npc_core import npc_pkg::*; (
     logic                       mem_rden    ;   // idu -> memory
     logic                       mem_wren    ;   // idu -> memory
     logic   [ 7:0]              mem_wlen    ;
+    logic   [ 7:0]              mem_rlen    ;
 
 /* ==================================================================== */
 /* ============================= Main Code ============================ */
@@ -102,9 +103,18 @@ module npc_core import npc_pkg::*; (
     
     assign mem_raddr = alu_res                                          ;
     // Just for verilator
+    always_comb begin : Width
+        unique case (ld_op)
+            LD_B, LD_BU: mem_rlen = 8'd1 ;
+            LD_H, LD_HU: mem_rlen = 8'd2 ;
+            LD_W:        mem_rlen = 8'd4 ;
+            default :    mem_rlen = 8'd0 ;
+      endcase
+    end
+
     always_ff @(negedge clk) begin : Simulation
       if (mem_rden)
-        mem_rd_tmp <= npc_pmem_read(mem_raddr);
+        mem_rd_tmp <= npc_pmem_read(mem_raddr, mem_rlen);
     end
 
     always_comb begin
