@@ -129,8 +129,10 @@ typedef struct {
   char logbuf[128];
 } IRingBuf;
 
+#define FUN_NAME_MAX_LEN 100
+
 typedef struct {
-  char name[20];
+  char name[FUN_NAME_MAX_LEN];
   uint32_t entry_addr;
   uint32_t func_size;
 } FuncInfo;

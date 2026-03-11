@@ -65,7 +65,10 @@ FuncInfo* init_ftrace(const char *elf_file) {
   Assert(func_table != NULL, "Failed to allocate memory for func_table");
   for (size_t i = 0; i < symtab_size; i++) {
     if (ELF32_ST_TYPE(symtab[i].st_info) == STT_FUNC) {
-      strcpy(func_table[--func_count].name, strtab + symtab[i].st_name);
+      char *st_name = strtab + symtab[i].st_name;
+      if (strlen(st_name) >= FUN_NAME_MAX_LEN) 
+        panic("Function name is too long!");
+      strcpy(func_table[--func_count].name, st_name);
       func_table[func_count].entry_addr = symtab[i].st_value;
       func_table[func_count].func_size = symtab[i].st_size;
       if (func_count == 0) break;
