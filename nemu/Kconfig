@@ -213,6 +213,24 @@ config DTRACE_AUDIO
 
 endif
 
+config TRACE_WAVE
+  depends on TRACE && ENGINE_NPC
+  bool "Enable the generation of waveforms file."
+  default n
+
+if TRACE_WAVE
+
+choice
+  prompt "Waveform format"
+  default WAVE_FST
+config WAVE_VCD
+  bool "VCD (Value Change Dump)"
+config WAVE_FST
+  bool "FST (Fast Signal Trace)"
+endchoice
+
+endif
+
 config ITRACE_COND
   depends on ITRACE
   string "Only trace instructions when the condition is true"

@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include "../include/macro.h"
 #include "../include/npc_utils.h" // IWYU pragma: keep
-#include <../../../nemu/include/generated/autoconf.h>
 
 static int trap_flag = 0;
 static uint32_t (*vaddr_read)(uint32_t addr, int len) = NULL;

@@ -1,3 +1,6 @@
+# Include
+-include $(NEMU_HOME)/include/config/auto.conf
+
 # Variables
 SIMULATOR = verilator
 WAVEVIEWER = surfer
@@ -12,14 +15,12 @@ NPC_LIB = build/libnpc.so
 NPC_CSRCS = $(wildcard $(NPC_HOME)/csrc/src/*.cpp)
 
 VERILATOR_CFLAGS = --cc -j $(shell nproc) -Wall --top-module $(TOP_MODULE) --Mdir $(OBJ_DIR)
-VERILATOR_CFLAGS += -Ivsrc -CFLAGS "-g -fPIC -fvisibility=hidden"
+VERILATOR_CFLAGS += -Ivsrc -CFLAGS "-fPIC -fvisibility=hidden"
 VERILATOR_CFLAGS += -Wno-fatal
-VERILATOR_CFLAGS += --trace-vcd
+VERILATOR_CFLAGS += $(if $(CONFIG_WAVE_FST), --trace-fst, $(if $(CONFIG_WAVE_VCD), --trace-vcd, ))
+VERILATOR_CFLAGS += $(if $(CONFIG_CC_DEBUG), -CFLAGS -g, -CFLAGS -O3)
 VERILATOR_CFLAGS += --lib-create npc
 VERILATOR_CFLAGS += $(VSRCS) $(NPC_CSRCS)
-
-all:
-	@echo "Write this Makefile by your self."
 
 verilating: $(VSRCS)
 	@mkdir -p $(OBJ_DIR)
@@ -31,7 +32,13 @@ $(NPC_LIB): verilating
 shared: $(NPC_LIB)
 
 wave:
+ifeq ($(CONFIG_WAVE_VCD), y)
 	$(WAVEVIEWER) $(BUILD_DIR)/simx.vcd
+else ifeq ($(CONFIG_WAVE_FST), y)
+	$(WAVEVIEWER) $(BUILD_DIR)/simx.fst
+else
+	@echo "No wave format enabled. Please enable CONFIG_WAVE_VCD or CONFIG_WAVE_FST."
+endif
 
 sim:
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
