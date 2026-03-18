@@ -115,16 +115,31 @@ module idu import npc_pkg::*; (
 
                 inst_err    = 1'b0          ;
 
-                unique case ({inst.i.funct3, inst.i.imm[11:5]}) inside
-                    {3'h0, 7'h??}: alu_op_o = ALU_ADD   ;       // addi
-                    {3'h4, 7'h??}: alu_op_o = ALU_XOR   ;       // xori
-                    {3'h6, 7'h??}: alu_op_o = ALU_OR    ;       // ori
-                    {3'h7, 7'h??}: alu_op_o = ALU_AND   ;       // andi
-                    {3'h1, 7'h00}: alu_op_o = ALU_SLL   ;       // slli
-                    {3'h5, 7'h00}: alu_op_o = ALU_SRL   ;       // srli
-                    {3'h5, 7'h20}: alu_op_o = ALU_SRA   ;       // srai
-                    {3'h2, 7'h??}: alu_op_o = ALU_LT    ;       // slti
-                    {3'h3, 7'h??}: alu_op_o = ALU_LTU   ;       // sltiu
+                unique case (inst.i.funct3)
+                    3'h0: alu_op_o = ALU_ADD   ;       // addi
+                    3'h4: alu_op_o = ALU_XOR   ;       // xori
+                    3'h6: alu_op_o = ALU_OR    ;       // ori
+                    3'h7: alu_op_o = ALU_AND   ;       // andi
+                    3'h2: alu_op_o = ALU_LT    ;       // slti
+                    3'h3: alu_op_o = ALU_LTU   ;       // sltiu
+                    3'h1: begin
+                        if (inst.i.imm[11:5] == 7'h00) 
+                            alu_op_o = ALU_SLL   ;       // slli
+                        else begin
+                            alu_op_o = ALU_ADD;
+                            inst_err = 1'b1;
+                        end
+                    end
+                    3'h5: begin
+                        if (inst.i.imm[11:5] == 7'h00) 
+                            alu_op_o = ALU_SRL   ;       // srli
+                        else if (inst.i.imm[11:5] == 7'h20)
+                            alu_op_o = ALU_SRA   ;       // srai
+                        else begin
+                            alu_op_o = ALU_ADD;
+                            inst_err = 1'b1;
+                        end
+                    end
                     default: begin
                         alu_op_o = ALU_ADD;
                         inst_err = 1'b1;

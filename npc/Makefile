@@ -40,10 +40,20 @@ else
 	@echo "No wave format enabled. Please enable CONFIG_WAVE_VCD or CONFIG_WAVE_FST."
 endif
 
+sv2v:
+	@echo "Converting SystemVerilog to Verilog ..."
+	@mkdir -p ./vsrc/output
+	sv2v ./vsrc/*.sv > ./vsrc/output/merged.v
+
+yosys-sta:
+	@echo "Running static analysis ..."
+	make -C ../yosys-sta/ sta DESIGN=$(TOP_MODULE) RTL_FILES="$(NPC_HOME)/vsrc/output/merged.v" CLK_FREQ_MHZ=100 CLK_PORT_NAME=clk
+
 sim:
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 
 clean:
 	@rm -rf $(BUILD_DIR)
+	@rm -rf ./vsrc/output
 
 include ../Makefile
