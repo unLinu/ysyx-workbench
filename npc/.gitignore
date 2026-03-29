@@ -14,5 +14,6 @@
 !*.c
 !.gitignore
 !README.md
+!filelist.f
 build/
 output/

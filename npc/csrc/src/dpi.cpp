@@ -15,16 +15,16 @@ extern "C" {
 #endif
 
 /* DPI-C */
-void npc_trap() {
+void halt() {
   trap_flag = 1;
 }
 
-int npc_pmem_read(int raddr, char rlen) {
+int mem_read(int raddr, char rlen) {
   uint32_t ret = vaddr_read((uint32_t)raddr, rlen);
   return ret;
 }
 
-void npc_pmem_write(int waddr, int wdata, char wlen) {
+void mem_write(int waddr, int wdata, char wlen) {
   vaddr_write((uint32_t)waddr, (int)wlen, (uint32_t)wdata);
 }
 

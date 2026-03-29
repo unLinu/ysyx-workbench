@@ -1,14 +1,8 @@
-#include "Vnpc_core.h"
-#include "Vnpc_core___024root.h"
-#include "Vnpc_core_ifu.h"
-#include "Vnpc_core_npc_core.h"
-#include "Vnpc_core_regfile.h"
-#include "Vnpc_core_csr.h"
+#include "Vnpc_top.h"
+#include "Vnpc_top__Dpi.h"
 #include "../include/macro.h"
-#include "../include/npc_utils.h" // IWYU pragma: keep
 #include "verilated.h"
-#include <assert.h>
-#include <cstdint>
+#include <svdpi.h>
 #include <stdint.h>
 #include <string>
 #include <stdlib.h>
@@ -22,29 +16,37 @@
 typedef struct {
   uint32_t gpr[32];
   uint32_t pc;
-  // csr 
+  // csr
   uint32_t mcause, mstatus, mepc, mtvec;
 } diff_context_t;
 
+typedef enum {
+  MSTATUS = 0x300, MEPC = 0x341, MCAUSE = 0x342, MTVEC = 0x305
+} csr_addr_t;
+
 static VerilatedContext *contextp = nullptr;
-static Vnpc_core *top = nullptr;
+static Vnpc_top *top = nullptr;
 #if VM_TRACE_FST
 static VerilatedFstC *tfp = nullptr;
 #elif VM_TRACE_VCD
 static VerilatedVcdC *tfp = nullptr;
 #endif
 
+static svScope gpr_scope = nullptr;
+static svScope csr_scope = nullptr;
+static svScope pc_scope = nullptr;
+
 const static int RESET_TIME = 10;
 
-static void npc_regcpy(diff_context_t *dut, Vnpc_core_npc_core *const npc_core) {
-  for (int i = 0; i < 32; i++) {
-    dut->gpr[i] = npc_core->u_regfile->gpr[i];
-  }
+static void npc_regcpy(diff_context_t *dut) {
+  svSetScope(gpr_scope);
+  dpi_get_gpr((int *)dut->gpr);
   // csr
-  dut->mcause = npc_core->u_csr->mcause;
-  dut->mstatus = npc_core->u_csr->mstatus;
-  dut->mepc = npc_core->u_csr->mepc;
-  dut->mtvec = npc_core->u_csr->mtvec;
+  svSetScope(csr_scope);
+  dut->mcause = dpi_get_csr(MCAUSE);
+  dut->mstatus = dpi_get_csr(MSTATUS);
+  dut->mepc = dpi_get_csr(MEPC);
+  dut->mtvec = dpi_get_csr(MTVEC);
 }
 
 static inline void record_wave() {
@@ -56,12 +58,23 @@ static inline void record_wave() {
 extern "C" {
 
 __EXPORT void npc_init(int argc, char **argv) {
+  // Initialize top module and trace
   const char *NPC_HOME = getenv("NPC_HOME");
   if (NPC_HOME == nullptr) { panic("Can't find NPC_HOME environment variable"); }
   std::string wave_path = std::string(NPC_HOME) + "/build/simx";
   contextp = new VerilatedContext;
   contextp->commandArgs(argc, argv);
-  top = new Vnpc_core{contextp};
+  top = new Vnpc_top{contextp};
+
+  // Set DPI-C scope
+  gpr_scope = svGetScopeFromName("TOP.npc_top.u_core.u_idu.u_regfile.u_dpi_probe_gpr");
+  csr_scope = svGetScopeFromName("TOP.npc_top.u_core.u_csr.u_dpi_probe_csr");
+  pc_scope  = svGetScopeFromName("TOP.npc_top.u_core.u_ifu.u_dpi_probe_pc");
+ 
+  assert(gpr_scope != nullptr && "failed to find gpr scope");
+  assert(csr_scope != nullptr && "failed to find csr scope");
+  assert(pc_scope  != nullptr && "failed to find pc scope");
+
 #if VM_TRACE_FST
   Verilated::traceEverOn(true);
   tfp = new VerilatedFstC;
@@ -99,13 +112,12 @@ __EXPORT void npc_exec_once(uint32_t inst, uint32_t *snpc, uint32_t *dnpc) {
   // execution
   top->inst_i = inst;
   top->eval();
-  Assert(top->inst_err == 0, "Instruction is invalid at PC = 0x%08x", top->pc_o);
 
   contextp->timeInc(1);
   record_wave();  // record clk = 1
 
-  *snpc = top->npc_core->u_ifu->snpc;
-  *dnpc = top->npc_core->u_ifu->dnpc;
+  svSetScope(pc_scope);
+  dpi_get_pc((int *)snpc, (int *)dnpc);
 
   // negedege clk
   top->clk = 0;
@@ -138,8 +150,7 @@ __EXPORT void npc_delete() {
 }
 
 __EXPORT void npc_update_reg(diff_context_t *regs) {
-  const auto npc_core = top->npc_core;
-  npc_regcpy(regs, npc_core);
+  npc_regcpy(regs);
 }
 
 } // extern "C"
