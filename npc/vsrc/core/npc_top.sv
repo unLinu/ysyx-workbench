@@ -3,6 +3,7 @@ module npc_top (
   input   logic               clk             ,
   input   logic               rst_n           ,
   // Fetch Instruction
+  input   logic               inst_valid      ,
   input   isa_pkg::word_t     inst_i          ,
   output  isa_pkg::word_t     pc_o
 );
@@ -34,7 +35,8 @@ module npc_top (
     .ebreak_o    ( c2h_ebreak      ),
     // Inputs
     .clk         ( clk             ),
-    .rst_n       ( rst_n           )
+    .rst_n       ( rst_n           ),
+    .inst_valid  ( inst_valid      )
   );
 
   dpi_sim_mem u_sim_mem (

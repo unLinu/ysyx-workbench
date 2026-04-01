@@ -10,6 +10,7 @@ module npc_ifu import isa_pkg::PC_RST; #(
   input   bypass_pkg::pc_fwd_t        wb_trap_i       ,   // ecall
   input   bypass_pkg::pc_fwd_t        wb_mret_i       ,   // mret
   // inst mem access
+  input   logic                       inst_valid      ,
   input   isa_pkg::word_t             inst_i          ,
   output  isa_pkg::word_t             pc_o            ,
 
@@ -38,7 +39,7 @@ module npc_ifu import isa_pkg::PC_RST; #(
   // handshake
   generate
     if (ARCH == "SINGLE") begin: g_single_arch
-      assign tx_if.valid  = 1'b1              ;
+      assign  tx_if.valid     = inst_valid    ;   // valid when inst is valid
     end
   endgenerate
 

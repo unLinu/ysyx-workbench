@@ -20,7 +20,7 @@ CFLAGS += $(if $(CONFIG_CC_DEBUG), -g, -O3)
 # VERILATOR_FLAGS
 VERILATOR_FLAGS = --cc -j $(shell nproc) -Wall --top-module $(TOP_MODULE) --Mdir $(OBJ_DIR)
 VERILATOR_FLAGS += -CFLAGS "$(CFLAGS)"
-VERILATOR_FLAGS += -Wno-fatal --no-assert
+VERILATOR_FLAGS += -Wno-fatal
 VERILATOR_FLAGS += $(if $(CONFIG_WAVE_VCD), --trace-vcd --trace-threads 1)
 VERILATOR_FLAGS += $(if $(CONFIG_WAVE_FST), --trace-fst --trace-threads 1)
 VERILATOR_FLAGS += --lib-create npc

@@ -3,6 +3,7 @@ module npc_core (
   input   logic               clk               ,
   input   logic               rst_n             ,
   // Fetch Instruction
+  input   logic               inst_valid        ,
   input   isa_pkg::word_t     inst_i            ,
   output  isa_pkg::word_t     pc_o              ,
   // Mem access [DPI]
@@ -68,7 +69,8 @@ module npc_core (
     .tx_if        ( if2id_if.master ),
     // Inputs
     .clk          ( clk             ),
-    .rst_n        ( rst_n           )
+    .rst_n        ( rst_n           ),
+    .inst_valid   ( inst_valid      )
   );
 
   npc_idu u_idu (

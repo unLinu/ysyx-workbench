@@ -92,6 +92,7 @@ __EXPORT void npc_reset() {
   top->rst_n = 0;
   top->clk = 0;
   top->inst_i = 0;
+  top->inst_valid = 0;
 
   top->eval();
   record_wave();
@@ -111,6 +112,7 @@ __EXPORT void npc_reset() {
 __EXPORT void npc_exec_once(uint32_t inst, uint32_t *snpc, uint32_t *dnpc) {
   // execution
   top->inst_i = inst;
+  top->inst_valid = 1;
   top->eval();
 
   contextp->timeInc(1);

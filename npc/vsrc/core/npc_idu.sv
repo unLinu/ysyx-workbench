@@ -148,7 +148,7 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
           {3'h5, 7'h20}: alu_op = ALU_OP_SRA     ;     // sra
           {3'h2, 7'h00}: alu_op = ALU_OP_LT      ;     // slt
           {3'h3, 7'h00}: alu_op = ALU_OP_LTU     ;     // sltu
-          default: r_inst_err: assert(0) else $fatal(1, "Invalid R-TYPE!");
+          default: r_inst_err: `ASSERT_INST(rx_if.valid, inst.raw)
         endcase
       end
 
@@ -176,7 +176,7 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
             unique if (inst.i.imm[11:5] == 7'h00)
               alu_op   = ALU_OP_SLL   ;           // slli
             else 
-              i_inst_err1: assert(0) else $fatal(1, "Invalid I-TYPE!");
+              i_inst_err1: `ASSERT_INST(rx_if.valid, inst.raw)
           end
           3'h5: begin
             unique if (inst.i.imm[11:5] == 7'h00)
@@ -184,7 +184,7 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
             else if (inst.i.imm[11:5] == 7'h20)
               alu_op   = ALU_OP_SRA   ;           // srai
             else
-              i_inst_err2: assert(0) else $fatal(1, "Invalid I-TYPE!");
+              i_inst_err2: `ASSERT_INST(rx_if.valid, inst.raw)
           end
         endcase
       end
@@ -210,7 +210,7 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
           3'h2: ld_type = LD_TYPE_W   ;     // lw
           3'h4: ld_type = LD_TYPE_BU  ;     // lbu
           3'h5: ld_type = LD_TYPE_HU  ;     // lhu
-          default: ld_inst_err: assert(0) else $fatal(1, "Invalid LD-TYPE!");
+          default: ld_inst_err: `ASSERT_INST(rx_if.valid, inst.raw)
         endcase
       end
 
@@ -231,7 +231,7 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
           3'h0: st_type = ST_TYPE_B ;       // sb
           3'h1: st_type = ST_TYPE_H ;       // sh
           3'h2: st_type = ST_TYPE_W ;       // sw
-          default: st_inst_err: assert(0) else $fatal(1, "Invalid ST-TYPE!");
+          default: st_inst_err: `ASSERT_INST(rx_if.valid, inst.raw)
         endcase
       end
 
@@ -254,7 +254,7 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
           3'h5: alu_op = ALU_OP_GE  ;       // bge
           3'h6: alu_op = ALU_OP_LTU ;       // bltu
           3'h7: alu_op = ALU_OP_GEU ;       // bgeu
-          default: b_inst_err: assert(0) else $fatal(1, "Invalid B-TYPE!");
+          default: b_inst_err: `ASSERT_INST(rx_if.valid, inst.raw)
         endcase
       end
 
@@ -290,7 +290,7 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
           rf_wb_en  = 1'b1          ;
         end
         else
-          jalr_inst_err: assert(0) else $fatal(1, "Invalid funct3!");
+          jalr_inst_err: `ASSERT_INST(rx_if.valid, inst.raw)
       end
 
 
@@ -348,11 +348,11 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
               I_MRET:   mret_flag   = 1'b1  ;   // mret
             endcase
           end
-          default: sys_inst_err: assert(0) else $fatal(1, "Invalid funct3!");
+          default: sys_inst_err: `ASSERT_INST(rx_if.valid, inst.raw)
         endcase
       end
 
-      default: decode_err: assert(0) else $fatal(1, "Instruction is invalid: %x", inst.raw);
+      default: decode_err: `ASSERT_INST(rx_if.valid, inst.raw)
 
     endcase
   end
