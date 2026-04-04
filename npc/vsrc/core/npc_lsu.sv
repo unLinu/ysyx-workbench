@@ -1,7 +1,8 @@
 `include "npc_defines.svh"
-module npc_lsu import ctrl_pkg::*; #(
-  parameter string ARCH = "SINGLE"
-)(
+module npc_lsu import ctrl_pkg::*; (
+  // System signals
+  input   logic             clk           ,
+  input   logic             rst_n         ,
   // mem access
   mem_if.master             m_mem_if      ,
   // interface
@@ -29,17 +30,22 @@ module npc_lsu import ctrl_pkg::*; #(
   logic   [ 7:0]                mem_rlen      ;
   logic   [ 7:0]                mem_wlen      ;
 
+  // FSM state
+  typedef enum logic [0:0] {
+    LS_IDLE, LS_GET
+  } ls_state_e;
+
+  ls_state_e                    state         ;
+  ls_state_e                    next_state    ;
+
 /* ==================================================================== */
 /* ============================= Main Code ============================ */
 /* ==================================================================== */
 
   // handshake
-  generate
-    if (ARCH == "SINGLE") begin: g_single_arch
-      assign tx_if.valid  = 1'b1              ;
-      assign rx_if.ready  = 1'b1              ;
-    end
-  endgenerate
+  assign tx_if.valid = rx_if.valid &&
+    ((state == LS_IDLE && ~mem_rd_en) || (state == LS_GET))                 ;   // 不是访存指令或者访存指令已经拿到数据了
+  assign rx_if.ready = state == LS_IDLE ? ~mem_rd_en : 1'b1                 ;
 
   assign  rx_data             = pipeline_pkg::ex2ls_data_t'(rx_if.data_pkg) ;   // unpacking
   assign  tx_if.data_pkg      = tx_data                                     ;   // packing
@@ -58,6 +64,8 @@ module npc_lsu import ctrl_pkg::*; #(
   assign  tx_data = '{
     // PC reg
     pc                        : rx_data.pc                                  ,
+    // Debug
+    inst                      : rx_data.inst                                ,
     // Write back
     rf_wb_en                  : rx_data.rf_wb_en                            ,
     rd                        : rx_data.rd                                  ,
@@ -73,18 +81,35 @@ module npc_lsu import ctrl_pkg::*; #(
     csr_op                    : rx_data.csr_op                              ,
     mem_rdata                 : mem_rdata                                   ,
 
-    default                   : 'd0
+    default                   : '0
   };
   // --------------------------- tx drive end -----------------------------
 
   // --------------------------- mem master drive -------------------------
   assign  m_mem_if.addr       = alu_res                                     ;
-  assign  m_mem_if.rd_en      = mem_rd_en                                   ;
-  assign  m_mem_if.wr_en      = mem_wr_en                                   ;
+  assign  m_mem_if.rd_en      = mem_rd_en & rx_if.valid & (state != LS_GET) ;
+  assign  m_mem_if.wr_en      = mem_wr_en & rx_if.valid                     ;
   assign  m_mem_if.wr_data    = rs2_data                                    ;
   assign  m_mem_if.rlen       = mem_rlen                                    ;
   assign  m_mem_if.wlen       = mem_wlen                                    ;
   // --------------------------- mem master end ----------------------------
+
+  /* ----- FSM Start ----- */
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (~rst_n)
+      state <= LS_IDLE    ;
+    else
+      state <= next_state ;
+  end
+
+  always_comb begin
+    unique case (state)
+      LS_IDLE: next_state = mem_rd_en & rx_if.valid ? LS_GET : LS_IDLE      ;
+      LS_GET : next_state = LS_IDLE                                         ;
+      default: next_state = LS_IDLE                                         ;
+    endcase
+  end
+  /* ----- FSM End ------- */
 
   /* Load Mux */
   always_comb begin

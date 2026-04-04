@@ -1,7 +1,5 @@
 `include "npc_defines.svh"
-module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
-  parameter ARCH = "SINGLE"
-)(
+module npc_idu import isa_pkg::*, ctrl_pkg::*; (
   // system signals
   input   logic             clk               ,
   // forward path from wbu
@@ -53,12 +51,8 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
 /* ==================================================================== */
 
   // handshake
-  generate
-    if (ARCH == "SINGLE") begin: g_single_arch
-      assign tx_if.valid  = 1'b1              ;
-      assign rx_if.ready  = 1'b1              ;
-    end
-  endgenerate
+  assign tx_if.valid  = rx_if.valid                                         ;
+  assign rx_if.ready  = tx_if.ready                                         ;
 
   assign  rx_data             = pipeline_pkg::if2id_data_t'(rx_if.data_pkg) ;   // unpacking
   assign  inst.raw            = rx_data.inst                                ;   // slice
@@ -68,6 +62,8 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
   assign  tx_data = '{
     // PC reg
     pc                        : rx_data.pc                                  ,
+    // Debug
+    inst                      : rx_data.inst                                ,
     // Write back
     rf_wb_en                  : rf_wb_en                                    ,
     rd                        : rd                                          ,
@@ -79,7 +75,7 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
     alu_op                    : alu_op                                      ,
     alu_src1                  : alu_src1                                    ,
     alu_src2                  : alu_src2                                    ,
-    br_type                   : br_type                                     ,
+    br_type                   : rx_if.valid ? br_type : BR_TYPE_NONE        ,
     // Mem access
     mem_wr_en                 : mem_wr_en                                   ,
     mem_rd_en                 : mem_rd_en                                   ,
@@ -261,7 +257,7 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
       ////////////////
       /* OPCODE JAL */
       ////////////////
-      OPCODE_JAR: begin
+      OPCODE_JAL: begin
         imm_type    = IMM_TYPE_J    ;
         br_type     = BR_TYPE_JAL   ;
         wb_sel      = WB_SEL_IFU    ;
@@ -324,7 +320,7 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; #(
       ////////////
       /* SYSTEM */
       ////////////
-      OPCDOE_SYS: begin
+      OPCODE_SYS: begin
         imm_type    = IMM_TYPE_I    ;
         wb_sel      = WB_SEL_CSR    ;
         alu_op      = ALU_OP_ADD    ;

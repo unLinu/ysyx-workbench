@@ -3,9 +3,10 @@ module npc_core (
   input   logic               clk               ,
   input   logic               rst_n             ,
   // Fetch Instruction
-  input   logic               inst_valid        ,
+  input   logic               inst_valid_i      ,
   input   isa_pkg::word_t     inst_i            ,
   output  isa_pkg::word_t     pc_o              ,
+  output  logic               ifetch_req_o      ,
   // Mem access [DPI]
   mem_if.master               m_mem_if          ,
   // Halt [Debug]
@@ -67,10 +68,12 @@ module npc_core (
     .inst_i       ( inst_i          ),
     .pc_o         ( pc_o            ),
     .tx_if        ( if2id_if.master ),
+    // Outputs
+    .ifetch_req_o ( ifetch_req_o    ),
     // Inputs
     .clk          ( clk             ),
     .rst_n        ( rst_n           ),
-    .inst_valid   ( inst_valid      )
+    .inst_valid_i ( inst_valid_i    )
   );
 
   npc_idu u_idu (
@@ -95,10 +98,15 @@ module npc_core (
      // Interfaces
     .m_mem_if   ( m_mem_if.master ),
     .rx_if      ( ex2ls_if.slave  ),
-    .tx_if      ( ls2wb_if.master )
+    .tx_if      ( ls2wb_if.master ),
+    // Inputs
+    .clk        ( clk             ),
+    .rst_n      ( rst_n           )
   );
 
   npc_wbu u_wbu (
+    .clk(clk),
+    .rst_n(rst_n),
     // Interfaces
     .rd_o             ( wb2id_rd         ),
     .rd_data_o        ( wb2id_rd_data    ),
@@ -150,6 +158,13 @@ module npc_core (
   bind npc_csr dpi_probe_csr u_dpi_probe_csr (
     // Interfaces
     .csr_i     ( csr )
+  );
+
+  bind npc_wbu dpi_probe_wbu u_dpi_probe_wbu (
+    // Interfaces
+    .wbu_inst_i            ( rx_data.inst ),
+    // Inputs
+    .wbu_commit_valid_i    ( commit_valid_o  )
   );
 
 endmodule

@@ -8,11 +8,11 @@ package isa_pkg;
   localparam OPCODE_LD   = 7'h03             ;
   localparam OPCODE_S    = 7'h23             ;
   localparam OPCODE_B    = 7'h63             ;
-  localparam OPCODE_JAR  = 7'h6f             ;
+  localparam OPCODE_JAL  = 7'h6f             ;
   localparam OPCODE_JALR = 7'h67             ;
   localparam OPCODE_LUI  = 7'h37             ;
   localparam OPCODE_AUI  = 7'h17             ;
-  localparam OPCDOE_SYS  = 7'h73             ;
+  localparam OPCODE_SYS  = 7'h73             ;
 
   localparam I_EBREAK    = `XLEN'h00100073   ;
   localparam I_ECALL     = `XLEN'h00000073   ;

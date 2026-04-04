@@ -1,19 +1,20 @@
 module npc_top (
   // System signals
   input   logic               clk             ,
-  input   logic               rst_n           ,
-  // Fetch Instruction
-  input   logic               inst_valid      ,
-  input   isa_pkg::word_t     inst_i          ,
-  output  isa_pkg::word_t     pc_o
+  input   logic               rst_n
 );
 
 /* ==================================================================== */
 /* ============================ Parameters ============================ */
 /* ==================================================================== */
 
-  // Core <-> Mem
-  logic                       c2h_ebreak      ;
+  // Core <-> DPI_Halt
+  logic                       c2halt_ebreak       ;
+  // Core <-> iMem
+  isa_pkg::word_t             c2im_pc             ;
+  isa_pkg::word_t             im2c_inst           ;
+  logic                       im2c_inst_valid     ;
+  logic                       c2im_rd_en          ;
 
 /* ==================================================================== */
 /* ============================= Main Code ============================ */
@@ -26,17 +27,30 @@ module npc_top (
 
   mem_if           mem_bus()        ;
 
+  dpi_sim_imem u_sim_imem (
+    // Interfaces
+    .pc_i          ( c2im_pc          ),
+    .inst_o        ( im2c_inst        ),
+    // Outputs
+    .inst_valid_o  ( im2c_inst_valid  ),
+    // Inputs
+    .clk           ( clk              ),
+    .rst_n         ( rst_n            ),
+    .rd_en_i       ( c2im_rd_en       )
+  );
+
   npc_core u_core (
     // Interfaces
-    .inst_i      ( inst_i          ),
-    .pc_o        ( pc_o            ),
-    .m_mem_if    ( mem_bus.master  ),
+    .inst_i         ( im2c_inst       ),
+    .pc_o           ( c2im_pc         ),
+    .m_mem_if       ( mem_bus.master  ),
     // Outputs
-    .ebreak_o    ( c2h_ebreak      ),
+    .ebreak_o       ( c2halt_ebreak   ),
+    .ifetch_req_o   ( c2im_rd_en      ),
     // Inputs
-    .clk         ( clk             ),
-    .rst_n       ( rst_n           ),
-    .inst_valid  ( inst_valid      )
+    .clk            ( clk             ),
+    .rst_n          ( rst_n           ),
+    .inst_valid_i   ( im2c_inst_valid )
   );
 
   dpi_sim_mem u_sim_mem (
@@ -48,7 +62,7 @@ module npc_top (
 
   dpi_halt u_dpi_halt (
     // Inputs
-    .ebreak_i    ( c2h_ebreak      )
+    .ebreak_i    ( c2halt_ebreak  )
   );
 
 endmodule

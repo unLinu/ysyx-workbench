@@ -1,7 +1,5 @@
 `include "npc_defines.svh"
-module npc_exu import ctrl_pkg::*; #(
-  parameter string ARCH = "SINGLE"
-)(
+module npc_exu import ctrl_pkg::*; (
   // forward path to ifu
   output  bypass_pkg::pc_fwd_t      ex_jump_o     ,
   // interface
@@ -36,12 +34,8 @@ module npc_exu import ctrl_pkg::*; #(
 /* ==================================================================== */
 
   // handshake
-  generate
-    if (ARCH == "SINGLE") begin: g_single_arch
-      assign tx_if.valid  = 1'b1              ;
-      assign rx_if.ready  = 1'b1              ;
-    end
-  endgenerate
+  assign tx_if.valid  = rx_if.valid           ;
+  assign rx_if.ready  = tx_if.ready           ;
 
   assign  rx_data             = pipeline_pkg::id2ex_data_t'(rx_if.data_pkg) ;   // unpacking
   assign  tx_if.data_pkg      = tx_data                                     ;   // packing
@@ -61,6 +55,8 @@ module npc_exu import ctrl_pkg::*; #(
   assign  tx_data = '{
     // PC reg
     pc                        : rx_data.pc                                  ,
+    // Debug
+    inst                      : rx_data.inst                                ,
     // Write back
     rf_wb_en                  : rx_data.rf_wb_en                            ,
     wb_sel                    : rx_data.wb_sel                              ,

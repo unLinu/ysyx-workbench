@@ -54,7 +54,7 @@ module npc_exu_alu import ctrl_pkg::*; (
       ALU_OP_LTU:  alu_res_o = {{(`XLEN-1){1'b0}}, ~is_geu};
       ALU_OP_GE:   alu_res_o = {{(`XLEN-1){1'b0}}, ~is_lt };
       ALU_OP_GEU:  alu_res_o = {{(`XLEN-1){1'b0}},  is_geu};
-      default:     alu_op_error: assert(0); else $fatal("Invalid alu_op_i!");
+      default:     alu_op_error: assert(0) else $fatal("Invalid alu_op_i!");
     endcase
   end
 

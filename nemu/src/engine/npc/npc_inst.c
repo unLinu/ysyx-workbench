@@ -9,7 +9,7 @@
 
 void (*npc_init) (int argc, char **argv) = NULL;
 void (*npc_reset) () = NULL;
-void (*npc_exec_once) (uint32_t inst, uint32_t *snpc, uint32_t *dnpc) = NULL;
+void (*npc_exec_once) (uint32_t *inst, uint32_t *snpc, uint32_t *dnpc) = NULL;
 void (*npc_delete) () = NULL;
 void (*get_regs_from_npc) (CPU_state *dut) = NULL;
 void (*npc_init_mem)(uint32_t (*vrd)(uint32_t addr, int len), void (*vwr)(uint32_t addr, int len, uint32_t data)) = NULL;
@@ -51,8 +51,7 @@ void init_engine(char *npc_so_file) {
 }
 
 int isa_exec_once(Decode *s) {
-  s->isa.inst = vaddr_ifetch(s->snpc, 4);
-  npc_exec_once(s->isa.inst, &s->snpc, &s->dnpc);
+  npc_exec_once(&s->isa.inst, &s->snpc, &s->dnpc);
   get_regs_from_npc(&cpu);
   if (npc_get_trap_flag())
     NEMUTRAP(s->pc, cpu.gpr[10]);

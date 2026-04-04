@@ -17,13 +17,14 @@ module dpi_sim_mem (
 /* ============================= Main Code ============================ */
 /* ==================================================================== */
 
+  // SRAM simulation
   always_ff @(posedge clk) begin: DPI_MEM_WR
     if (s_mem_if.wr_en) begin
       mem_write(s_mem_if.addr, s_mem_if.wr_data, s_mem_if.wlen);
     end
   end
 
-  always_ff @(negedge clk) begin : DPI_MEM_RD
+  always_ff @(posedge clk) begin : DPI_MEM_RD
     if (s_mem_if.rd_en) begin
       s_mem_if.rd_data <= mem_read(s_mem_if.addr, s_mem_if.rlen);
     end

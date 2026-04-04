@@ -1,7 +1,8 @@
 `include "npc_defines.svh"
-module npc_wbu import ctrl_pkg::*; #(
-  parameter string ARCH = "SINGLE"
-)(
+module npc_wbu import ctrl_pkg::*; (
+  // System signals
+  input   logic                   clk                 ,
+  input   logic                   rst_n               ,
   // forward path to regfile
   output  logic                   rf_wb_en_o          ,
   output  isa_pkg::regid_t        rd_o                ,
@@ -25,13 +26,6 @@ module npc_wbu import ctrl_pkg::*; #(
 /* ============================ Parameters ============================ */
 /* ==================================================================== */
 
-  // handshake
-  generate
-    if (ARCH == "SINGLE") begin: g_single_arch
-      assign rx_if.ready  = 1'b1              ;
-    end
-  endgenerate
-
   // interface
   pipeline_pkg::ls2wb_data_t    rx_data       ;
 
@@ -46,11 +40,15 @@ module npc_wbu import ctrl_pkg::*; #(
   logic                         ecall_flag    ;
   logic                         mret_flag     ;
   logic                         csr_wb_en     ;
+  isa_pkg::regid_t              rd            ;
+  logic                         rf_wb_en      ;
 
 /* ==================================================================== */
 /* ============================= Main Code ============================ */
 /* ==================================================================== */
 
+  // handshake
+  assign  rx_if.ready         = 1'b1                                        ;
   assign  rx_data             = pipeline_pkg::ls2wb_data_t'(rx_if.data_pkg) ;   // unpacking
 
   // --------------------------- rx signals begin -------------------------
@@ -62,23 +60,25 @@ module npc_wbu import ctrl_pkg::*; #(
   assign  mret_flag           = rx_data.mret_flag                           ;
   assign  csr_addr            = rx_data.csr_addr                            ;
   assign  csr_op              = rx_data.csr_op                              ;
-  assign  wb_sel              = rx_data.wb_sel                              ;
   assign  csr_wb_en           = rx_data.csr_wb_en                           ;
+  assign  wb_sel              = rx_data.wb_sel                              ;
+  assign  rf_wb_en            = rx_data.rf_wb_en                            ;
+  assign  rd                  = rx_data.rd                                  ;
   // --------------------------- rx signals end ---------------------------
 
   // Write back
-  assign  rf_wb_en_o          = rx_data.rf_wb_en                            ;
-  assign  rd_o                = rx_data.rd                                  ;
+  assign  rf_wb_en_o          = rf_wb_en & rx_if.valid                      ;
+  assign  rd_o                = rd                                          ;
 
   // Trap
   assign  csr_addr_o          = csr_addr                                    ;
   assign  csr_wdata_o         = alu_res                                     ;   // rs1_data
-  assign  ebreak_flag_o       = ebreak_flag                                 ;
+  assign  ebreak_flag_o       = ebreak_flag & rx_if.valid                   ;
 
-  assign  wb_trap_valid_o     = ecall_flag                                  ;
-  assign  wb_mret_valid_o     = mret_flag                                   ;
+  assign  wb_trap_valid_o     = ecall_flag & rx_if.valid                    ;
+  assign  wb_mret_valid_o     = mret_flag & rx_if.valid                     ;
   assign  csr_op_o            = csr_op                                      ;
-  assign  csr_wb_en_o         = csr_wb_en                                   ;
+  assign  csr_wb_en_o         = csr_wb_en & rx_if.valid                     ;
 
   assign  wb_pc_o             = pc                                          ;
 
@@ -92,6 +92,19 @@ module npc_wbu import ctrl_pkg::*; #(
       WB_SEL_CSR: rd_data_o = csr_rdata_i                                   ;
       default: wb_sel_err: assert(0) else $fatal(1, "Invalid wb_sel!")      ;
     endcase
+  end
+
+  // DPI-C read
+  /* verilator lint_off UNUSED */
+  logic  commit_valid_o;
+  /* verilator lint_on UNUSED */
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n)
+      commit_valid_o <= 1'b0;
+    else if (rx_if.valid)
+      commit_valid_o <= 1'b1;
+    else
+      commit_valid_o <= 1'b0;
   end
 
 endmodule

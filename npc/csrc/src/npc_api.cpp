@@ -1,7 +1,10 @@
 #include "Vnpc_top.h"
 #include "Vnpc_top__Dpi.h"
 #include "../include/macro.h"
+#include "../include/npc_utils.h" // IWYU pragma: keep
 #include "verilated.h"
+#include <cstdint>
+#include <cstdio>
 #include <svdpi.h>
 #include <stdint.h>
 #include <string>
@@ -35,6 +38,7 @@ static VerilatedVcdC *tfp = nullptr;
 static svScope gpr_scope = nullptr;
 static svScope csr_scope = nullptr;
 static svScope pc_scope = nullptr;
+static svScope wbu_scope = nullptr;
 
 const static int RESET_TIME = 10;
 
@@ -66,14 +70,16 @@ __EXPORT void npc_init(int argc, char **argv) {
   contextp->commandArgs(argc, argv);
   top = new Vnpc_top{contextp};
 
-  // Set DPI-C scope
+  // Set DPI-C scope name
   gpr_scope = svGetScopeFromName("TOP.npc_top.u_core.u_idu.u_regfile.u_dpi_probe_gpr");
   csr_scope = svGetScopeFromName("TOP.npc_top.u_core.u_csr.u_dpi_probe_csr");
   pc_scope  = svGetScopeFromName("TOP.npc_top.u_core.u_ifu.u_dpi_probe_pc");
+  wbu_scope = svGetScopeFromName("TOP.npc_top.u_core.u_wbu.u_dpi_probe_wbu");
  
-  assert(gpr_scope != nullptr && "failed to find gpr scope");
-  assert(csr_scope != nullptr && "failed to find csr scope");
-  assert(pc_scope  != nullptr && "failed to find pc scope");
+  Assert(gpr_scope != nullptr, "failed to find gpr scope");
+  Assert(csr_scope != nullptr, "failed to find csr scope");
+  Assert(pc_scope  != nullptr, "failed to find pc scope");
+  Assert(wbu_scope != nullptr, "failed to find wbu scope");
 
 #if VM_TRACE_FST
   Verilated::traceEverOn(true);
@@ -89,11 +95,8 @@ __EXPORT void npc_init(int argc, char **argv) {
 }
 
 __EXPORT void npc_reset() {
-  top->rst_n = 0;
   top->clk = 0;
-  top->inst_i = 0;
-  top->inst_valid = 0;
-
+  top->rst_n = 0;
   top->eval();
   record_wave();
 
@@ -105,31 +108,34 @@ __EXPORT void npc_reset() {
   }
 
   top->clk = 1;
+  top->rst_n = 1;
   top->eval();
-  top->rst_n = 1; 
+  contextp->timeInc(1);
+  record_wave();
 }
 
-__EXPORT void npc_exec_once(uint32_t inst, uint32_t *snpc, uint32_t *dnpc) {
-  // execution
-  top->inst_i = inst;
-  top->inst_valid = 1;
-  top->eval();
+__EXPORT void npc_exec_once(uint32_t *inst, uint32_t *snpc, uint32_t *dnpc) {
+  svSetScope(wbu_scope);
+  do {
+    // negedge clk
+    top->clk = 0;
+    top->eval();
+    contextp->timeInc(1);
+    record_wave();  // record clk = 0
 
-  contextp->timeInc(1);
-  record_wave();  // record clk = 1
+    svSetScope(pc_scope);
+    dpi_get_pc((int *)snpc, (int *)dnpc);
 
-  svSetScope(pc_scope);
-  dpi_get_pc((int *)snpc, (int *)dnpc);
+    // posedge clk
+    top->clk = 1;
+    top->eval();    // 更新架构状态
+    contextp->timeInc(1);
+    record_wave();  // record clk = 1
+    svSetScope(wbu_scope);
+  } while (!dpi_get_commit());
 
-  // negedege clk
-  top->clk = 0;
-  top->eval();
-  contextp->timeInc(1);
-  record_wave();  // record clk = 0
-
-  // posedge clk
-  top->clk = 1;
-  top->eval();   // 更新 pc，寄存器堆等状态
+  svSetScope(wbu_scope);
+  *inst = dpi_get_inst();
 }
 
 __EXPORT void npc_delete() {

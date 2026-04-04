@@ -1,7 +1,5 @@
 `include "npc_defines.svh"
-module npc_ifu import isa_pkg::PC_RST; #(
-  parameter ARCH = "SINGLE"
-)(
+module npc_ifu import isa_pkg::PC_RST; (
   // system signals
   input   logic                       clk             ,
   input   logic                       rst_n           ,
@@ -10,9 +8,10 @@ module npc_ifu import isa_pkg::PC_RST; #(
   input   bypass_pkg::pc_fwd_t        wb_trap_i       ,   // ecall
   input   bypass_pkg::pc_fwd_t        wb_mret_i       ,   // mret
   // inst mem access
-  input   logic                       inst_valid      ,
+  input   logic                       inst_valid_i    ,
   input   isa_pkg::word_t             inst_i          ,
   output  isa_pkg::word_t             pc_o            ,
+  output  logic                       ifetch_req_o    ,
 
   // interface
   handshake_if.master                 tx_if               // ifu -> idu
@@ -32,20 +31,26 @@ module npc_ifu import isa_pkg::PC_RST; #(
   isa_pkg::word_t                 snpc        ;   // static next pc
   isa_pkg::word_t                 next_pc     ;
 
+  // FSM state
+  typedef enum logic [1:0] {
+    IF_REQ, IF_FETCH, IF_IDLE
+  } if_state_e ;
+
+  if_state_e                      state       ;
+  if_state_e                      next_state  ;
+
 /* ==================================================================== */
 /* ============================= Main Code ============================ */
 /* ==================================================================== */
 
   // handshake
-  generate
-    if (ARCH == "SINGLE") begin: g_single_arch
-      assign  tx_if.valid     = inst_valid    ;   // valid when inst is valid
-    end
-  endgenerate
+  assign  tx_if.valid     = inst_valid_i & (state == IF_FETCH)      ;
 
-  assign  snpc            = pc + `XLEN'd4     ;
-  assign  pc_o            = pc                ;
-  assign  tx_if.data_pkg  = tx_data           ;   // packing
+  assign  snpc            = pc + `XLEN'd4                           ;
+  assign  pc_o            = pc                                      ;
+  assign  tx_if.data_pkg  = tx_data                                 ;   // packing
+
+  assign  ifetch_req_o    = (state == IF_REQ)                       ;
 
   // --------------------------- tx drive begin ---------------------------
   assign  tx_data = '{
@@ -55,11 +60,29 @@ module npc_ifu import isa_pkg::PC_RST; #(
   };
   // --------------------------- tx drive end -----------------------------
 
+  /* ----- FSM Start ----- */
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (~rst_n)
+      state <= IF_IDLE    ;
+    else
+      state <= next_state ;
+  end
+
+  always_comb begin
+    unique case (state)
+      IF_IDLE : next_state = IF_REQ                                           ;
+      IF_REQ  : next_state = IF_FETCH                                         ;
+      IF_FETCH: next_state = inst_valid_i && tx_if.ready ? IF_REQ : IF_FETCH  ;
+      default : next_state = IF_IDLE                                          ;
+    endcase
+  end
+  /* ----- FSM End ------- */
+
   /* PC Register */
   always_ff @(posedge clk or negedge rst_n) begin
     if (~rst_n)
       pc <= PC_RST  ;
-    else
+    else if ((state == IF_FETCH) && inst_valid_i && tx_if.ready)
       pc <= next_pc ;
   end
 

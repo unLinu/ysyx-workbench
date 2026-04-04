@@ -16,6 +16,8 @@ package pipeline_pkg;
   typedef struct packed {
     // PC reg [ifu -> wbu]
     isa_pkg::word_t           pc          ;
+    // Debug
+    isa_pkg::word_t           inst        ;
     // Write back [idu -> wbu]
     logic                     rf_wb_en    ;
     isa_pkg::regid_t          rd          ;
@@ -48,6 +50,8 @@ package pipeline_pkg;
   typedef struct packed {
     // PC reg [ifu -> wbu]
     isa_pkg::word_t           pc          ;
+    // Debug
+    isa_pkg::word_t           inst        ;
     // Write back [idu -> wbu]
     logic                     rf_wb_en    ;
     ctrl_pkg::wb_sel_e        wb_sel      ;
@@ -75,6 +79,8 @@ package pipeline_pkg;
   typedef struct packed {
     // PC reg [ifu -> wbu]
     isa_pkg::word_t           pc          ;
+    // Debug
+    isa_pkg::word_t           inst        ;
     // Write back [idu/exu -> wbu]
     logic                     rf_wb_en    ;
     isa_pkg::regid_t          rd          ;
