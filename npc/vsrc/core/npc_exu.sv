@@ -16,16 +16,8 @@ module npc_exu import ctrl_pkg::*; (
   pipeline_pkg::ex2ls_data_t    tx_data       ;
 
   // internal signals
-  isa_pkg::word_t               pc            ;
   isa_pkg::word_t               br_target     ;
-  isa_pkg::word_t               imm           ;
-  isa_pkg::word_t               rs1_data      ;
-  isa_pkg::word_t               rs2_data      ;
   isa_pkg::word_t               alu_res       ;
-  ctrl_pkg::alu_op_e            alu_op        ;
-  ctrl_pkg::alu_src1_e          alu_src1      ;
-  ctrl_pkg::alu_src2_e          alu_src2      ;
-  ctrl_pkg::br_type_e           br_type       ;
   isa_pkg::word_t               src1          ;
   isa_pkg::word_t               src2          ;
 
@@ -39,17 +31,6 @@ module npc_exu import ctrl_pkg::*; (
 
   assign  rx_data             = pipeline_pkg::id2ex_data_t'(rx_if.data_pkg) ;   // unpacking
   assign  tx_if.data_pkg      = tx_data                                     ;   // packing
-
-  // --------------------------- rx signals begin -------------------------
-  assign  pc                  = rx_data.pc                                  ;
-  assign  imm                 = rx_data.imm                                 ;
-  assign  alu_op              = rx_data.alu_op                              ;
-  assign  br_type             = rx_data.br_type                             ;
-  assign  rs1_data            = rx_data.rs1_data                            ;
-  assign  rs2_data            = rx_data.rs2_data                            ;
-  assign  alu_src1            = rx_data.alu_src1                            ;
-  assign  alu_src2            = rx_data.alu_src2                            ;
-  // --------------------------- rx signals end ---------------------------
 
   // --------------------------- tx drive begin ---------------------------
   assign  tx_data = '{
@@ -83,25 +64,25 @@ module npc_exu import ctrl_pkg::*; (
 
   /* ALU Src Mux */
   always_comb begin
-    unique case (alu_src1)
-      ALU_SRC1_RS  : src1 = rs1_data ;
-      ALU_SRC1_PC  : src1 = pc       ;
-      ALU_SRC1_ZERO: src1 = '0       ;
-      default      : src1 = '0       ;
+    unique case (rx_data.alu_src1)
+      ALU_SRC1_RS  : src1 = rx_data.rs1_data    ;
+      ALU_SRC1_PC  : src1 = rx_data.pc          ;
+      ALU_SRC1_ZERO: src1 = '0                  ;
+      default      : src1 = '0                  ;
     endcase
 
-    unique case (alu_src2)
-      ALU_SRC2_RS  : src2 = rs2_data ;
-      ALU_SRC2_IMM : src2 = imm      ;
-      ALU_SRC2_ZERO: src2 = '0       ;
-      default      : src2 = '0       ;
+    unique case (rx_data.alu_src2)
+      ALU_SRC2_RS  : src2 = rx_data.rs2_data    ;
+      ALU_SRC2_IMM : src2 = rx_data.imm         ;
+      ALU_SRC2_ZERO: src2 = '0                  ;
+      default      : src2 = '0                  ;
     endcase
   end
 
   /* pc control */
   always_comb begin
-    unique case (br_type)
-      BR_TYPE_COND: br_target = pc + imm                                    ;
+    unique case (rx_data.br_type)
+      BR_TYPE_COND: br_target = rx_data.pc + rx_data.imm                    ;
       BR_TYPE_JAL : br_target = alu_res                                     ;
       BR_TYPE_JALR: br_target = alu_res & ~`XLEN'd1                         ;
       BR_TYPE_NONE: br_target = '0                                          ;
@@ -112,7 +93,7 @@ module npc_exu import ctrl_pkg::*; (
   assign  ex_jump_o.pc    = br_target                                       ;
   always_comb begin
     ex_jump_o.valid = 1'b0                                                  ;
-    unique case (br_type)
+    unique case (rx_data.br_type)
       BR_TYPE_NONE: ex_jump_o.valid = 1'b0                                  ;
       BR_TYPE_JAL : ex_jump_o.valid = 1'b1                                  ;
       BR_TYPE_JALR: ex_jump_o.valid = 1'b1                                  ;
@@ -125,10 +106,10 @@ module npc_exu import ctrl_pkg::*; (
 /* ==================================================================== */
 
   npc_exu_alu u_alu (
-    .alu_op_i      ( alu_op     ),
-    .src1_i        ( src1       ),
-    .src2_i        ( src2       ),
-    .alu_res_o     ( alu_res    )
+    .alu_op_i      ( rx_data.alu_op     ),
+    .src1_i        ( src1               ),
+    .src2_i        ( src2               ),
+    .alu_res_o     ( alu_res            )
   );
 
 endmodule
