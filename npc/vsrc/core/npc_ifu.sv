@@ -7,13 +7,8 @@ module npc_ifu import isa_pkg::PC_RST; (
   input   bypass_pkg::pc_fwd_t        ex_jump_i       ,   // branch, jump
   input   bypass_pkg::pc_fwd_t        wb_trap_i       ,   // ecall
   input   bypass_pkg::pc_fwd_t        wb_mret_i       ,   // mret
-  // inst mem access
-  input   logic                       inst_valid_i    ,
-  input   isa_pkg::word_t             inst_i          ,
-  output  isa_pkg::word_t             pc_o            ,
-  output  logic                       ifetch_req_o    ,
-
   // interface
+  ifetch_bus_if.master                ifetch_if       ,   // ifetch interface
   handshake_if.master                 tx_if               // ifu -> idu
 );
 
@@ -26,14 +21,17 @@ module npc_ifu import isa_pkg::PC_RST; (
 
   // PC Register
   isa_pkg::word_t                 pc          ;
-
-  // internal signals
-  isa_pkg::word_t                 snpc        ;   // static next pc
   isa_pkg::word_t                 next_pc     ;
 
-  // FSM state
-  typedef enum logic [1:0] {
-    IF_REQ, IF_FETCH, IF_IDLE
+  // Internal signals
+  logic                           ifetch_done ;
+  logic                           req_done    ;
+  logic                           rsp_done    ;
+  logic                           tx_done     ;
+
+  // FSM state definition
+  typedef enum logic [0:0] {
+    IF_REQ, IF_FETCH
   } if_state_e ;
 
   if_state_e                      state       ;
@@ -43,50 +41,68 @@ module npc_ifu import isa_pkg::PC_RST; (
 /* ============================= Main Code ============================ */
 /* ==================================================================== */
 
-  // handshake
-  assign  tx_if.valid     = inst_valid_i & (state == IF_FETCH)      ;
-
-  assign  snpc            = pc + `XLEN'd4                           ;
-  assign  pc_o            = pc                                      ;
+  ///////////////////////////////
+  /* pipeline control and data */
+  ///////////////////////////////
+  assign  tx_done = tx_if.valid & tx_if.ready                       ;
+  assign  tx_if.valid = ifetch_done                                 ;
   assign  tx_if.data_pkg  = tx_data                                 ;   // packing
-
-  assign  ifetch_req_o    = (state == IF_REQ)                       ;
-
-  // --------------------------- tx drive begin ---------------------------
   assign  tx_data = '{
-    pc                    : pc                ,
-    inst                  : inst_i            ,
+    pc                    : pc                    ,
+    inst                  : ifetch_if.rsp_data    ,
     default               : '0
   };
-  // --------------------------- tx drive end -----------------------------
 
+
+  ///////////////
+  /* ifetch_if */
+  ///////////////
+  assign  ifetch_done = ifetch_if.rsp_valid & ~ifetch_if.rsp_error  ;
+  // Request Channel
+  assign  req_done = ifetch_if.req_valid & ifetch_if.req_ready      ;
+  assign  ifetch_if.req_addr  = pc                                  ;
+  assign  ifetch_if.req_valid = (state == IF_REQ)                   ;
+  // Response Channel
+  assign  rsp_done = ifetch_if.rsp_valid & ifetch_if.rsp_ready      ;
+  assign  ifetch_if.rsp_ready = tx_if.ready                         ;
+
+  //                      req_done
+  // +--------+  ------------------------>  +----------+
+  // | IF_REQ |                             | IF_FETCH |
+  // +--------+  <------------------------  +----------+
+  //            rsp_done & tx_if.ready
+
+  ///////////////////////////
   /* ----- FSM Start ----- */
+  ///////////////////////////
   always_ff @(posedge clk or negedge rst_n) begin
     if (~rst_n)
-      state <= IF_IDLE    ;
+      state <= IF_REQ     ;
     else
       state <= next_state ;
   end
 
   always_comb begin
     unique case (state)
-      IF_IDLE : next_state = IF_REQ                                           ;
-      IF_REQ  : next_state = IF_FETCH                                         ;
-      IF_FETCH: next_state = inst_valid_i && tx_if.ready ? IF_REQ : IF_FETCH  ;
-      default : next_state = IF_IDLE                                          ;
+      IF_REQ  : next_state = req_done ? IF_FETCH : IF_REQ           ;
+      IF_FETCH: next_state = tx_done  ? IF_REQ   : IF_FETCH         ;
+      default : next_state = IF_REQ                                 ;
     endcase
   end
-  /* ----- FSM End ------- */
 
+  /////////////////
   /* PC Register */
+  /////////////////
   always_ff @(posedge clk or negedge rst_n) begin
     if (~rst_n)
       pc <= PC_RST  ;
-    else if ((state == IF_FETCH) && inst_valid_i && tx_if.ready)
+    else if (tx_done)
       pc <= next_pc ;
   end
 
+  ////////////
   /* PC MUX */
+  ////////////
   always_comb begin
     if (wb_trap_i.valid)
       next_pc = wb_trap_i.pc    ;
@@ -95,7 +111,7 @@ module npc_ifu import isa_pkg::PC_RST; (
     else if (ex_jump_i.valid)
       next_pc = ex_jump_i.pc    ;
     else
-      next_pc = snpc            ;
+      next_pc = pc + `XLEN'd4   ;
   end
 
 endmodule

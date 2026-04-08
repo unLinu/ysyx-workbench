@@ -3,10 +3,7 @@ module npc_core (
   input   logic               clk               ,
   input   logic               rst_n             ,
   // Fetch Instruction
-  input   logic               inst_valid_i      ,
-  input   isa_pkg::word_t     inst_i            ,
-  output  isa_pkg::word_t     pc_o              ,
-  output  logic               ifetch_req_o      ,
+  ifetch_bus_if.master        if_imem_if        ,
   // Mem access [DPI]
   mem_if.master               m_mem_if          ,
   // Halt [Debug]
@@ -62,18 +59,14 @@ module npc_core (
   // Unit
   npc_ifu u_ifu (
     // Interfaces
-    .ex_jump_i    ( ex2if_jump      ),
-    .wb_trap_i    ( wb2if_trap      ),
-    .wb_mret_i    ( wb2if_mret      ),
-    .inst_i       ( inst_i          ),
-    .pc_o         ( pc_o            ),
-    .tx_if        ( if2id_if.master ),
-    // Outputs
-    .ifetch_req_o ( ifetch_req_o    ),
+    .ex_jump_i    ( ex2if_jump        ),
+    .wb_trap_i    ( wb2if_trap        ),
+    .wb_mret_i    ( wb2if_mret        ),
+    .ifetch_if    ( if_imem_if.master ),
+    .tx_if        ( if2id_if.master   ),
     // Inputs
-    .clk          ( clk             ),
-    .rst_n        ( rst_n           ),
-    .inst_valid_i ( inst_valid_i    )
+    .clk          ( clk               ),
+    .rst_n        ( rst_n             )
   );
 
   npc_idu u_idu (

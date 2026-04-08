@@ -1,4 +1,7 @@
-interface mem_if;
+interface mem_if (
+  input   logic         clk       ,
+  input   logic         rst_n
+);
   logic                 rd_en     ;
   logic                 wr_en     ;
   logic   [ 7:0]        rlen      ;
@@ -22,4 +25,22 @@ interface mem_if;
     input   wr_data,
     input   wlen, rlen
   );
+
+  // Property
+  /* verilator lint_off SYNCASYNCNET */
+  property p_rden_one_pulse;
+    @(posedge clk) disable iff (~rst_n)
+      rd_en |=> !rd_en;
+  endproperty
+
+  property p_wren_one_pulse;
+    @(posedge clk) disable iff (~rst_n)
+      wr_en |=> !wr_en;
+  endproperty
+  /* verilator lint_on SYNCASYNCNET */
+
+  // Assertion
+  ap_rden_one_pulse: assert property (p_rden_one_pulse) else $warning("rd_en should be one pulse");
+  ap_wren_one_pulse: assert property (p_wren_one_pulse) else $warning("wr_en should be one pulse");
+
 endinterface

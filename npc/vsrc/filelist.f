@@ -10,5 +10,6 @@
 -y ./core/
 -y ./if/
 -y ./tb/
+-y ./axi/
 
 +libext+.sv+.v
