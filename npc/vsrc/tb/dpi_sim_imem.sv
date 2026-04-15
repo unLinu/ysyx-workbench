@@ -7,7 +7,7 @@ module dpi_sim_imem (
 /* ==================================================================== */
 
   // DPI-C function declarations
-  import "DPI-C" function int mem_read (input int raddr, input byte rlen);
+  import "DPI-C" function int mem_read (input int raddr);
 
   // handshake success
   logic         ar_done     ;
@@ -63,7 +63,7 @@ module dpi_sim_imem (
       s_axi_if.rvalid <= 1'b0;
     end
     else if (ar_done) begin
-      s_axi_if.rdata <= mem_read(s_axi_if.araddr, 4);
+      s_axi_if.rdata <= mem_read(s_axi_if.araddr);
       s_axi_if.rresp <= '0;
       s_axi_if.rvalid <= 1'b1;
     end

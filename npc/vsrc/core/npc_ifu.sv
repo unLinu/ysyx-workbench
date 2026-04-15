@@ -8,7 +8,7 @@ module npc_ifu import isa_pkg::PC_RST; (
   input   bypass_pkg::pc_fwd_t        wb_trap_i       ,   // ecall
   input   bypass_pkg::pc_fwd_t        wb_mret_i       ,   // mret
   // interface
-  ifetch_bus_if.master                ifetch_if       ,   // ifetch interface
+  core_mem_if.master                  ifetch_if       ,   // ifetch interface
   handshake_if.master                 tx_if               // ifu -> idu
 );
 
@@ -26,7 +26,6 @@ module npc_ifu import isa_pkg::PC_RST; (
   // Internal signals
   logic                           ifetch_done ;
   logic                           req_done    ;
-  logic                           rsp_done    ;
   logic                           tx_done     ;
 
   // FSM state definition
@@ -57,20 +56,22 @@ module npc_ifu import isa_pkg::PC_RST; (
   ///////////////
   /* ifetch_if */
   ///////////////
-  assign  ifetch_done = ifetch_if.rsp_valid & ~ifetch_if.rsp_error  ;
+  assign  ifetch_done = ifetch_if.rsp_valid & ~ifetch_if.rsp_err    ;
   // Request Channel
   assign  req_done = ifetch_if.req_valid & ifetch_if.req_ready      ;
   assign  ifetch_if.req_addr  = pc                                  ;
+  assign  ifetch_if.req_data  = '0                                  ;
+  assign  ifetch_if.req_wstrb = '0                                  ;
+  assign  ifetch_if.req_is_write = 1'b0                             ;
   assign  ifetch_if.req_valid = (state == IF_REQ)                   ;
   // Response Channel
-  assign  rsp_done = ifetch_if.rsp_valid & ifetch_if.rsp_ready      ;
   assign  ifetch_if.rsp_ready = tx_if.ready                         ;
 
   //                      req_done
   // +--------+  ------------------------>  +----------+
   // | IF_REQ |                             | IF_FETCH |
   // +--------+  <------------------------  +----------+
-  //            rsp_done & tx_if.ready
+  //                      tx_done
 
   ///////////////////////////
   /* ----- FSM Start ----- */

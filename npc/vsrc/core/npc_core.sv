@@ -3,9 +3,9 @@ module npc_core (
   input   logic               clk               ,
   input   logic               rst_n             ,
   // Fetch Instruction
-  ifetch_bus_if.master        if_imem_if        ,
+  core_mem_if.master          if_imem_if        ,
   // Mem access [DPI]
-  mem_if.master               m_mem_if          ,
+  core_mem_if.master          m_mem_if          ,
   // Halt [Debug]
   output  logic               ebreak_o
 );
@@ -62,8 +62,8 @@ module npc_core (
     .ex_jump_i    ( ex2if_jump        ),
     .wb_trap_i    ( wb2if_trap        ),
     .wb_mret_i    ( wb2if_mret        ),
-    .ifetch_if    ( if_imem_if.master ),
-    .tx_if        ( if2id_if.master   ),
+    .ifetch_if    ( if_imem_if        ),
+    .tx_if        ( if2id_if          ),
     // Inputs
     .clk          ( clk               ),
     .rst_n        ( rst_n             )
@@ -73,8 +73,8 @@ module npc_core (
     // Interfaces
     .wb_rd_i          ( wb2id_rd        ),
     .wb_rd_data_i     ( wb2id_rd_data   ),
-    .rx_if            ( if2id_if.slave  ),
-    .tx_if            ( id2ex_if.master ),
+    .rx_if            ( if2id_if        ),
+    .tx_if            ( id2ex_if        ),
     // Inputs
     .clk              ( clk             ),
     .wb_rf_wb_en_i    ( wb2id_rf_wb_en  )
@@ -83,15 +83,15 @@ module npc_core (
   npc_exu u_exu (
     // Interfaces
     .ex_jump_o  ( ex2if_jump      ),
-    .rx_if      ( id2ex_if.slave  ),
-    .tx_if      ( ex2ls_if.master )
+    .rx_if      ( id2ex_if        ),
+    .tx_if      ( ex2ls_if        )
   );
 
   npc_lsu u_lsu (
      // Interfaces
-    .m_mem_if   ( m_mem_if.master ),
-    .rx_if      ( ex2ls_if.slave  ),
-    .tx_if      ( ls2wb_if.master ),
+    .m_mem_if   ( m_mem_if        ),
+    .rx_if      ( ex2ls_if        ),
+    .tx_if      ( ls2wb_if        ),
     // Inputs
     .clk        ( clk             ),
     .rst_n      ( rst_n           )
@@ -108,7 +108,7 @@ module npc_core (
     .csr_op_o         ( wb2csr_csr_op    ),
     .csr_wb_en_o      ( wb2csr_wb_en     ),
     .wb_pc_o          ( wb2csr_pc        ),
-    .rx_if            ( ls2wb_if.slave   ),
+    .rx_if            ( ls2wb_if         ),
     // Outputs
     .rf_wb_en_o       ( wb2id_rf_wb_en   ),
     .csr_addr_o       ( wb2csr_csr_addr  ),

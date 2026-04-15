@@ -54,7 +54,7 @@ static void serial_putc(char ch) {
 }
 
 static uint8_t serial_getc() {
-  MUXDEF(CONFIG_TARGET_AM, return getch(), return ch_dequeue()); // NOTE: CONFIG_TARGET_AM is not verified
+  MUXDEF(CONFIG_TARGET_AM, return getch(), return ch_dequeue()); // WARNING: CONFIG_TARGET_AM is not verified
 }
 
 static void serial_io_handler(uint32_t offset, int len, bool is_write) {
