@@ -116,7 +116,15 @@ __EXPORT void npc_reset() {
 
 __EXPORT void npc_exec_once(uint32_t *inst, uint32_t *snpc, uint32_t *dnpc) {
   svSetScope(wbu_scope);
+  static int timeout_cycle = 0;
   do {
+  #ifdef CONFIG_TIMEOUT_EXIT
+    if (timeout_cycle++ > 200) {
+      void npc_delete();
+      npc_delete();
+      panic("NPC execution timeout at PC = 0x%08x", *snpc - 4);
+    }
+  #endif
     // negedge clk
     top->clk = 0;
     top->eval();
@@ -136,6 +144,7 @@ __EXPORT void npc_exec_once(uint32_t *inst, uint32_t *snpc, uint32_t *dnpc) {
 
   svSetScope(wbu_scope);
   *inst = dpi_get_inst();
+  timeout_cycle = 0;
 }
 
 __EXPORT void npc_delete() {

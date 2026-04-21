@@ -1,4 +1,5 @@
-module dpi_sim_mem (
+`include "npc_defines.svh"
+module sim_uart (
   // interface
   axi4_lite_if.slave          s_axi_if
 );
@@ -7,9 +8,10 @@ module dpi_sim_mem (
 /* ============================ Parameters ============================ */
 /* ==================================================================== */
 
-  // DPI-C function declarations
-  import "DPI-C" function int mem_read (input int raddr);
-  import "DPI-C" function void mem_write (input int waddr, input int wdata, input byte wstrb);
+  import "DPI-C" function void difftest_set_skip();
+
+  // UART registers
+  logic   [ 7:0]   uart_thr; // Transmit Holding Register (write-only)
 
   // handshake success
   logic         ar_done       ;
@@ -110,8 +112,10 @@ module dpi_sim_mem (
       s_axi_if.bvalid <= 1'b0;
     end
     else if (aw_w_all_done) begin
-      mem_write(s_axi_if.awaddr, s_axi_if.wdata, byte'(s_axi_if.wstrb));
-      s_axi_if.bresp <= '0;
+      uart_thr <= s_axi_if.wdata[7:0];
+      $write("%c", s_axi_if.wdata[7:0]);
+      difftest_set_skip();
+      s_axi_if.bresp <= s_axi_if.awaddr == '0 ? `AXI_OKAY : `AXI_SLVERR;
       s_axi_if.bvalid <= 1'b1;
     end
     else if (b_done) begin
@@ -133,8 +137,8 @@ module dpi_sim_mem (
       s_axi_if.rvalid <= 1'b0;
     end
     else if (ar_done) begin
-      s_axi_if.rdata <= mem_read(s_axi_if.araddr);
-      s_axi_if.rresp <= '0;
+      $display("UART read is not supported!");
+      s_axi_if.rresp <= `AXI_SLVERR;
       s_axi_if.rvalid <= 1'b1;
     end
     else if (r_done) begin

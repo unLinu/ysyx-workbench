@@ -50,7 +50,9 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; (
 /* ============================= Main Code ============================ */
 /* ==================================================================== */
 
-  // handshake
+  ///////////////////////////////
+  /* pipeline control and data */
+  ///////////////////////////////
   assign tx_if.valid  = rx_if.valid                                         ;
   assign rx_if.ready  = tx_if.ready                                         ;
 
@@ -58,7 +60,6 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; (
   assign  inst.raw            = rx_data.inst                                ;   // slice
   assign  tx_if.data_pkg      = tx_data                                     ;   // packing
 
-  // --------------------------- tx drive begin ---------------------------
   assign  tx_data = '{
     // PC reg
     pc                        : rx_data.pc                                  ,
@@ -91,8 +92,6 @@ module npc_idu import isa_pkg::*, ctrl_pkg::*; (
 
     default                   : '0
   };
-  // --------------------------- tx drive end -----------------------------
-
 
   // ===============================================
   // ========= decoder combinational logic =========

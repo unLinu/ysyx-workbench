@@ -8,6 +8,7 @@
 #include "../include/npc_utils.h" // IWYU pragma: keep
 
 static int trap_flag = 0;
+static int is_skip_ref = 0;
 static uint32_t (*vaddr_read)(uint32_t addr, int len) = NULL;
 static void (*vaddr_write)(uint32_t addr, int len, uint32_t data) = NULL;
 
@@ -50,6 +51,10 @@ void mem_write(int waddr, int wdata, char wstrb) {
   vaddr_write(real_waddr, len, (uint32_t)wdata);
 }
 
+void difftest_set_skip() {
+  is_skip_ref = 1;
+}
+
 /* Interface */
  __EXPORT int npc_get_trap_flag() {
   return trap_flag;
@@ -58,6 +63,12 @@ void mem_write(int waddr, int wdata, char wstrb) {
 __EXPORT void npc_init_mem(uint32_t (*vrd)(uint32_t addr, int len), void (*vwr)(uint32_t addr, int len, uint32_t data)) {
   vaddr_read = vrd;
   vaddr_write = vwr;
+}
+
+__EXPORT int npc_get_difftest_skip_flag() {
+  int ret = is_skip_ref;
+  is_skip_ref = 0;
+  return ret;
 }
 
 #ifdef __cplusplus

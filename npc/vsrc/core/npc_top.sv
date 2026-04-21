@@ -20,26 +20,14 @@ module npc_top (
 /* =========================== Instantiation ========================== */
 /* ==================================================================== */
 
-  core_mem_if      if_imem_if();
-  core_mem_if      ls_mem_if();
-  axi4_lite_if     if_imem_axi_if( .aclk(clk), .aresetn(rst_n) );
-  axi4_lite_if     ls_mem_axi_if( .aclk(clk), .aresetn(rst_n) );
-
-  dpi_sim_imem u_sim_imem (
-    // Interfaces
-    .s_axi_if      ( if_imem_axi_if    )
-  );
-
-  axi4_lite_master u_axi_master_if (
-    // Interfaces
-    .s_bus_if      ( if_imem_if        ),
-    .m_axi_if      ( if_imem_axi_if    )
-  );
+  axi4_lite_if     o_mem_axi_if   ( .aclk(clk), .aresetn(rst_n) );
+  axi4_lite_if     sram_axi_if    ( .aclk(clk), .aresetn(rst_n) );
+  axi4_lite_if     uart_axi_if    ( .aclk(clk), .aresetn(rst_n) );
+  axi4_lite_if     clint_axi_if   ( .aclk(clk), .aresetn(rst_n) );
 
   npc_core u_core (
     // Interfaces
-    .if_imem_if    ( if_imem_if        ),
-    .m_mem_if      ( ls_mem_if         ),
+    .o_mem_axi_if  ( o_mem_axi_if      ),
     // Outputs
     .ebreak_o      ( c2halt_ebreak     ),
     // Inputs
@@ -47,15 +35,27 @@ module npc_top (
     .rst_n         ( rst_n             )
   );
 
-  axi4_lite_master u_axi_master_ls (
+  axi4_lite_xbar u_axi_xbar (
     // Interfaces
-    .s_bus_if      ( ls_mem_if      ),
-    .m_axi_if      ( ls_mem_axi_if  )
+    .s_axi_if        ( o_mem_axi_if    ),
+    .m_uart_axi_if   ( uart_axi_if     ),
+    .m_clint_axi_if  ( clint_axi_if    ),
+    .m_sram_axi_if   ( sram_axi_if     )
   );
 
-  dpi_sim_mem u_sim_mem (
+  dpi_sim_sram u_sim_sram (
     // Interfaces
-    .s_axi_if    ( ls_mem_axi_if  )
+    .s_axi_if    ( sram_axi_if  )
+  );
+
+  sim_uart u_sim_uart (
+		// Interfaces
+    .s_axi_if    ( uart_axi_if    )
+  );
+
+  clint u_clint (
+		// Interfaces
+    .s_axi_if    ( clint_axi_if   )
   );
 
   dpi_halt u_dpi_halt (

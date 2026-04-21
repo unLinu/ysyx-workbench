@@ -6,6 +6,7 @@
 ./pkg/bypass_pkg.sv
 
 ./core/npc_top.sv
+./tb/npc_bind.sv
 
 -y ./core/
 -y ./if/

@@ -1,3 +1,5 @@
+#include "common.h"
+#include "cpu/difftest.h"
 #include "isa.h"
 #include <cpu/cpu.h>
 #include <cpu/decode.h>
@@ -14,6 +16,7 @@ void (*npc_delete) () = NULL;
 void (*get_regs_from_npc) (CPU_state *dut) = NULL;
 void (*npc_init_mem)(uint32_t (*vrd)(uint32_t addr, int len), void (*vwr)(uint32_t addr, int len, uint32_t data)) = NULL;
 int  (*npc_get_trap_flag) () = NULL;
+int  (*npc_get_difftest_skip_flag) () = NULL;
 
 void init_engine(char *npc_so_file) {
   assert(npc_so_file != NULL);
@@ -39,6 +42,9 @@ void init_engine(char *npc_so_file) {
 
   npc_get_trap_flag = dlsym(handle, "npc_get_trap_flag");
   assert(npc_get_trap_flag);
+
+  npc_get_difftest_skip_flag = dlsym(handle, "npc_get_difftest_skip_flag");
+  assert(npc_get_difftest_skip_flag);
   
   npc_init_mem = dlsym(handle, "npc_init_mem");
   assert(npc_init_mem);
@@ -51,8 +57,24 @@ void init_engine(char *npc_so_file) {
 }
 
 int isa_exec_once(Decode *s) {
+#ifdef CONFIG_TIMEOUT_EXIT
+  // Timeout Detect
+  static vaddr_t last_pc = 0;
+  static int timeout_cnt = 0;
+  if (s->pc == last_pc)
+    timeout_cnt++;
+  else
+    timeout_cnt = 0;
+  last_pc = s->pc;
+  if (timeout_cnt > 200) {
+    set_nemu_state(NEMU_ABORT, s->pc, -1);
+  }
+#endif
+  // Execution
   npc_exec_once(&s->isa.inst, &s->snpc, &s->dnpc);
   get_regs_from_npc(&cpu);
+  if (npc_get_difftest_skip_flag())
+    difftest_skip_ref();
   if (npc_get_trap_flag())
     NEMUTRAP(s->pc, cpu.gpr[10]);
   return 0;

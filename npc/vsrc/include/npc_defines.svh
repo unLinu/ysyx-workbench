@@ -11,4 +11,9 @@
     assert(0) else $fatal(1, "Invalid inst: %x", inst); \
   end
 
+// AXI4-Lite ERROR
+`define AXI_OKAY 2'b00
+`define AXI_SLVERR 2'b10
+`define AXI_DECERR 2'b11
+
 `endif // __NPC_DEFINES_SVH__

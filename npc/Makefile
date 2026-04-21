@@ -5,6 +5,7 @@
 SIMULATOR = verilator
 WAVEVIEWER = surfer
 TOP_MODULE = npc_top
+YOSYS_TOP_MODULE = npc_yosys_top
 BUILD_DIR = build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
 NPC_VSRCS = vsrc
@@ -46,17 +47,17 @@ endif
 
 sv2v:
 	@echo "Converting SystemVerilog to Verilog ..."
-	@mkdir -p $(NPC_VSRCS)/output
-	sv2v $(NPC_VSRCS)/*.sv > $(NPC_VSRCS)/output/merged.v
+	@mkdir -p $(NPC_VSRCS)/build
+	sv2v --top=$(YOSYS_TOP_MODULE) -I=$(NPC_VSRCS)/include $(shell find ./vsrc -name "*.sv" ! -name "dpi_*.sv" ! -name "npc_top.sv") > $(NPC_VSRCS)/build/merged.v
 
 yosys-sta: sv2v
 	@echo "Running static analysis ..."
-	make -C ../yosys-sta/ sta DESIGN=$(TOP_MODULE) RTL_FILES="$(NPC_VSRCS)/output/merged.v" CLK_FREQ_MHZ=100 CLK_PORT_NAME=clk
+	make -C ../yosys-sta/ sta DESIGN=$(YOSYS_TOP_MODULE) RTL_FILES="$(NPC_HOME)/vsrc/build/merged.v" CLK_FREQ_MHZ=100 CLK_PORT_NAME=clk
 
 sim:
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 
 clean:
-	rm -rf $(BUILD_DIR) && rm -rf $(NPC_VSRCS)/output
+	rm -rf $(BUILD_DIR) && rm -rf $(NPC_VSRCS)/build
 
 include ../Makefile

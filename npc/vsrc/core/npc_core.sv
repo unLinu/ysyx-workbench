@@ -2,10 +2,8 @@ module npc_core (
   // System signals
   input   logic               clk               ,
   input   logic               rst_n             ,
-  // Fetch Instruction
-  core_mem_if.master          if_imem_if        ,
-  // Mem access [DPI]
-  core_mem_if.master          m_mem_if          ,
+  // AXI4-Lite Interface
+  axi4_lite_if.master         o_mem_axi_if      ,
   // Halt [Debug]
   output  logic               ebreak_o
 );
@@ -50,13 +48,44 @@ module npc_core (
 /* =========================== Instantiation ========================== */
 /* ==================================================================== */
 
-  // Interface
+  ////////////////
+  /* Interfaces */
+  ////////////////
   handshake_if #(pipeline_pkg::if2id_data_t)    if2id_if()      ;
   handshake_if #(pipeline_pkg::id2ex_data_t)    id2ex_if()      ;
   handshake_if #(pipeline_pkg::ex2ls_data_t)    ex2ls_if()      ;
   handshake_if #(pipeline_pkg::ls2wb_data_t)    ls2wb_if()      ;
 
-  // Unit
+  core_mem_if      if_imem_if()                                 ;
+  core_mem_if      ls_mem_if()                                  ;
+  axi4_lite_if     if_imem_axi_if( .aclk(clk), .aresetn(rst_n) );
+  axi4_lite_if     ls_mem_axi_if ( .aclk(clk), .aresetn(rst_n) );
+
+  /////////
+  /* AXI */
+  /////////
+  axi4_lite_arbiter u_axi_arbiter (
+    // Interfaces
+    .i0_axi_if     ( if_imem_axi_if    ),
+    .i1_axi_if     ( ls_mem_axi_if     ),
+    .o_axi_if      ( o_mem_axi_if      )
+  );
+
+  axi4_lite_master u_axi_master_if (
+    // Interfaces
+    .s_bus_if      ( if_imem_if        ),
+    .m_axi_if      ( if_imem_axi_if    )
+  );
+
+  axi4_lite_master u_axi_master_ls (
+    // Interfaces
+    .s_bus_if      ( ls_mem_if      ),
+    .m_axi_if      ( ls_mem_axi_if  )
+  );
+
+  ///////////
+  /* Units */
+  ///////////
   npc_ifu u_ifu (
     // Interfaces
     .ex_jump_i    ( ex2if_jump        ),
@@ -89,7 +118,7 @@ module npc_core (
 
   npc_lsu u_lsu (
      // Interfaces
-    .m_mem_if   ( m_mem_if        ),
+    .m_mem_if   ( ls_mem_if       ),
     .rx_if      ( ex2ls_if        ),
     .tx_if      ( ls2wb_if        ),
     // Inputs
@@ -98,8 +127,6 @@ module npc_core (
   );
 
   npc_wbu u_wbu (
-    .clk(clk),
-    .rst_n(rst_n),
     // Interfaces
     .rd_o             ( wb2id_rd         ),
     .rd_data_o        ( wb2id_rd_data    ),
@@ -114,7 +141,10 @@ module npc_core (
     .csr_addr_o       ( wb2csr_csr_addr  ),
     .ebreak_flag_o    ( ebreak_o         ),
     .wb_trap_valid_o  ( wb2if_trap_valid ),
-    .wb_mret_valid_o  ( wb2if_mret_valid )
+    .wb_mret_valid_o  ( wb2if_mret_valid ),
+    // Inputs
+    .clk              ( clk              ),
+    .rst_n            ( rst_n            )
   );
 
   npc_csr u_csr (
@@ -132,32 +162,6 @@ module npc_core (
     .wr_en_i       ( wb2csr_wb_en     ),
     .is_ecall_i    ( wb2if_trap_valid ),
     .is_mret_i     ( wb2if_mret_valid )
-  );
-
-  /* ================================ */
-  /* ======= Bind DPI Probes ======== */
-  /* ================================ */
-  bind npc_ifu dpi_probe_pc u_dpi_probe_pc (
-    // Interfaces
-    .pc_i      ( pc       ),
-    .dnpc_i    ( next_pc  )
-  );
-
-  bind npc_idu_regfile dpi_probe_gpr u_dpi_probe_gpr (
-    // Interfaces
-    .gpr_i     ( gpr/*.[0:`GPR_NUM-1]*/ )
-  );
-
-  bind npc_csr dpi_probe_csr u_dpi_probe_csr (
-    // Interfaces
-    .csr_i     ( csr )
-  );
-
-  bind npc_wbu dpi_probe_wbu u_dpi_probe_wbu (
-    // Interfaces
-    .wbu_inst_i            ( rx_data.inst ),
-    // Inputs
-    .wbu_commit_valid_i    ( commit_valid_o  )
   );
 
 endmodule

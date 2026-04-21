@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h> // IWYU pragma: keep
+#include "../../../nemu/include/generated/autoconf.h"
 
 // macro stringizing
 #define str_temp(x) #x

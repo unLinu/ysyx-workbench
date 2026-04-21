@@ -231,6 +231,11 @@ endchoice
 
 endif
 
+config TIMEOUT_EXIT
+  depends on TRACE && ENGINE_NPC
+  bool "Enable timeout exit."
+  default y
+
 config ITRACE_COND
   depends on ITRACE
   string "Only trace instructions when the condition is true"
