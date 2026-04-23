@@ -1,7 +1,7 @@
 `include "npc_defines.svh"
 module sim_uart (
   // interface
-  axi4_lite_if.slave          s_axi_if
+  axi4_if.slave          s_axi_if
 );
 
 /* ==================================================================== */
@@ -12,6 +12,10 @@ module sim_uart (
 
   // UART registers
   logic   [ 7:0]   uart_thr; // Transmit Holding Register (write-only)
+
+  logic   [31:0]   awaddr_q ;
+  logic   [ 3:0]   awid_q   ;
+  logic   [31:0]   wdata_q  ;
 
   // handshake success
   logic         ar_done       ;
@@ -85,37 +89,45 @@ module sim_uart (
   always_ff @(posedge s_axi_if.aclk or negedge s_axi_if.aresetn) begin
     if (~s_axi_if.aresetn) begin
       aw_get_q <= 1'b0;
+      awaddr_q <= '0;
+      awid_q   <= '0;
     end
     else if (aw_w_all_done) begin
       aw_get_q <= 1'b0;
     end
     else if (aw_done) begin
       aw_get_q <= 1'b1;
+      awaddr_q <= s_axi_if.awaddr;
+      awid_q   <= s_axi_if.awid;
     end
   end
 
   always_ff @(posedge s_axi_if.aclk or negedge s_axi_if.aresetn) begin
     if (~s_axi_if.aresetn) begin
       w_get_q <= 1'b0;
+      wdata_q <= '0;
     end
     else if (aw_w_all_done) begin
       w_get_q <= 1'b0;
     end
     else if (w_done) begin
       w_get_q <= 1'b1;
+      wdata_q <= s_axi_if.wdata;
     end
   end
 
   always_ff @(posedge s_axi_if.aclk or negedge s_axi_if.aresetn) begin
     if (~s_axi_if.aresetn) begin
-      s_axi_if.bresp <= '0;
+      s_axi_if.bresp  <= '0;
+      s_axi_if.bid    <= '0;
       s_axi_if.bvalid <= 1'b0;
     end
     else if (aw_w_all_done) begin
-      uart_thr <= s_axi_if.wdata[7:0];
-      $write("%c", s_axi_if.wdata[7:0]);
+      uart_thr <= w_get_q ? wdata_q[7:0] : s_axi_if.wdata[7:0];
+      $write("%c", w_get_q ? wdata_q[7:0] : s_axi_if.wdata[7:0]);
       difftest_set_skip();
-      s_axi_if.bresp <= s_axi_if.awaddr == '0 ? `AXI_OKAY : `AXI_SLVERR;
+      s_axi_if.bresp  <= (aw_get_q ? awaddr_q : s_axi_if.awaddr) == '0 ? `AXI_OKAY : `AXI_SLVERR;
+      s_axi_if.bid    <= aw_get_q ? awid_q : s_axi_if.awid;
       s_axi_if.bvalid <= 1'b1;
     end
     else if (b_done) begin
@@ -132,13 +144,17 @@ module sim_uart (
 
   always_ff @(posedge s_axi_if.aclk or negedge s_axi_if.aresetn) begin
     if (~s_axi_if.aresetn) begin
-      s_axi_if.rdata <= '0;
-      s_axi_if.rresp <= '0;
+      s_axi_if.rdata  <= '0;
+      s_axi_if.rresp  <= '0;
+      s_axi_if.rid    <= '0;
+      s_axi_if.rlast  <= 1'b0;
       s_axi_if.rvalid <= 1'b0;
     end
     else if (ar_done) begin
       $display("UART read is not supported!");
-      s_axi_if.rresp <= `AXI_SLVERR;
+      s_axi_if.rresp  <= `AXI_SLVERR;
+      s_axi_if.rid    <= s_axi_if.arid;
+      s_axi_if.rlast  <= 1'b1;
       s_axi_if.rvalid <= 1'b1;
     end
     else if (r_done) begin

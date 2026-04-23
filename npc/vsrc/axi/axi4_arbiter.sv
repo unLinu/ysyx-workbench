@@ -1,8 +1,8 @@
-module axi4_lite_arbiter (
+module axi4_arbiter (
   // interface
-  axi4_lite_if.slave              i0_axi_if       ,
-  axi4_lite_if.slave              i1_axi_if       ,
-  axi4_lite_if.master             o_axi_if
+  axi4_if.slave              i0_axi_if       ,
+  axi4_if.slave              i1_axi_if       ,
+  axi4_if.master             o_axi_if
 );
 
 /* ==================================================================== */
@@ -75,83 +75,122 @@ module axi4_lite_arbiter (
   always_comb begin
     o_axi_if.awaddr  = '0;
     o_axi_if.awprot  = '0;
+    o_axi_if.awid    = '0;
+    o_axi_if.awlen   = '0;
+    o_axi_if.awsize  = '0;
+    o_axi_if.awburst = '0;
     o_axi_if.awvalid = 1'b0;
     o_axi_if.wdata   = '0;
     o_axi_if.wstrb   = '0;
+    o_axi_if.wlast   = 1'b0;
     o_axi_if.wvalid  = 1'b0;
     o_axi_if.bready  = 1'b0;
     o_axi_if.araddr  = '0;
     o_axi_if.arprot  = '0;
+    o_axi_if.arid    = '0;
+    o_axi_if.arlen   = '0;
+    o_axi_if.arsize  = '0;
+    o_axi_if.arburst = '0;
     o_axi_if.arvalid = 1'b0;
     o_axi_if.rready  = 1'b0;
 
     i0_axi_if.awready = 1'b0;
     i0_axi_if.wready  = 1'b0;
     i0_axi_if.bresp   = '0;
+    i0_axi_if.bid     = '0;
     i0_axi_if.bvalid  = 1'b0;
     i0_axi_if.arready = 1'b0;
     i0_axi_if.rdata   = '0;
     i0_axi_if.rresp   = '0;
+    i0_axi_if.rid     = '0;
+    i0_axi_if.rlast   = 1'b0;
     i0_axi_if.rvalid  = 1'b0;
 
     i1_axi_if.awready = 1'b0;
     i1_axi_if.wready  = 1'b0;
     i1_axi_if.bresp   = '0;
+    i1_axi_if.bid     = '0;
     i1_axi_if.bvalid  = 1'b0;
     i1_axi_if.arready = 1'b0;
     i1_axi_if.rdata   = '0;
     i1_axi_if.rresp   = '0;
+    i1_axi_if.rid     = '0;
+    i1_axi_if.rlast   = 1'b0;
     i1_axi_if.rvalid  = 1'b0;
 
     unique case (state)
       I0_GRANT: begin
         o_axi_if.awaddr   = i0_axi_if.awaddr;
         o_axi_if.awprot   = i0_axi_if.awprot;
+        o_axi_if.awid     = i0_axi_if.awid;
+        o_axi_if.awlen    = i0_axi_if.awlen;
+        o_axi_if.awsize   = i0_axi_if.awsize;
+        o_axi_if.awburst  = i0_axi_if.awburst;
         o_axi_if.awvalid  = i0_axi_if.awvalid;
         o_axi_if.wdata    = i0_axi_if.wdata;
         o_axi_if.wstrb    = i0_axi_if.wstrb;
+        o_axi_if.wlast    = i0_axi_if.wlast;
         o_axi_if.wvalid   = i0_axi_if.wvalid;
         o_axi_if.bready   = i0_axi_if.bready;
         o_axi_if.araddr   = i0_axi_if.araddr;
         o_axi_if.arprot   = i0_axi_if.arprot;
+        o_axi_if.arid     = i0_axi_if.arid;
+        o_axi_if.arlen    = i0_axi_if.arlen;
+        o_axi_if.arsize   = i0_axi_if.arsize;
+        o_axi_if.arburst  = i0_axi_if.arburst;
         o_axi_if.arvalid  = i0_axi_if.arvalid;
         o_axi_if.rready   = i0_axi_if.rready;
 
         i0_axi_if.awready = o_axi_if.awready;
         i0_axi_if.wready  = o_axi_if.wready;
         i0_axi_if.bresp   = o_axi_if.bresp;
+        i0_axi_if.bid     = o_axi_if.bid;
         i0_axi_if.bvalid  = o_axi_if.bvalid;
         i0_axi_if.arready = o_axi_if.arready;
         i0_axi_if.rdata   = o_axi_if.rdata;
         i0_axi_if.rresp   = o_axi_if.rresp;
+        i0_axi_if.rid     = o_axi_if.rid;
+        i0_axi_if.rlast   = o_axi_if.rlast;
         i0_axi_if.rvalid  = o_axi_if.rvalid;
       end
 
       I1_GRANT: begin
         o_axi_if.awaddr   = i1_axi_if.awaddr;
         o_axi_if.awprot   = i1_axi_if.awprot;
+        o_axi_if.awid     = i1_axi_if.awid;
+        o_axi_if.awlen    = i1_axi_if.awlen;
+        o_axi_if.awsize   = i1_axi_if.awsize;
+        o_axi_if.awburst  = i1_axi_if.awburst;
         o_axi_if.awvalid  = i1_axi_if.awvalid;
         o_axi_if.wdata    = i1_axi_if.wdata;
         o_axi_if.wstrb    = i1_axi_if.wstrb;
+        o_axi_if.wlast    = i1_axi_if.wlast;
         o_axi_if.wvalid   = i1_axi_if.wvalid;
         o_axi_if.bready   = i1_axi_if.bready;
         o_axi_if.araddr   = i1_axi_if.araddr;
         o_axi_if.arprot   = i1_axi_if.arprot;
+        o_axi_if.arid     = i1_axi_if.arid;
+        o_axi_if.arlen    = i1_axi_if.arlen;
+        o_axi_if.arsize   = i1_axi_if.arsize;
+        o_axi_if.arburst  = i1_axi_if.arburst;
         o_axi_if.arvalid  = i1_axi_if.arvalid;
         o_axi_if.rready   = i1_axi_if.rready;
 
         i1_axi_if.awready = o_axi_if.awready;
         i1_axi_if.wready  = o_axi_if.wready;
         i1_axi_if.bresp   = o_axi_if.bresp;
+        i1_axi_if.bid     = o_axi_if.bid;
         i1_axi_if.bvalid  = o_axi_if.bvalid;
         i1_axi_if.arready = o_axi_if.arready;
         i1_axi_if.rdata   = o_axi_if.rdata;
         i1_axi_if.rresp   = o_axi_if.rresp;
+        i1_axi_if.rid     = o_axi_if.rid;
+        i1_axi_if.rlast   = o_axi_if.rlast;
         i1_axi_if.rvalid  = o_axi_if.rvalid;
       end
 
       default: begin
-        grant_err: assert(state == IDLE) else $fatal(1, "Invalid state in AXI4-Lite Arbiter FSM, %d", state);
+        grant_err: assert(state == IDLE) else $fatal(1, "Invalid state in AXI4 Arbiter FSM, %d", state);
       end
     endcase
   end

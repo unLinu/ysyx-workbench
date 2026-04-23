@@ -3,7 +3,7 @@ module npc_core (
   input   logic               clk               ,
   input   logic               rst_n             ,
   // AXI4-Lite Interface
-  axi4_lite_if.master         o_mem_axi_if      ,
+  axi4_if.master         o_mem_axi_if      ,
   // Halt [Debug]
   output  logic               ebreak_o
 );
@@ -58,26 +58,26 @@ module npc_core (
 
   core_mem_if      if_imem_if()                                 ;
   core_mem_if      ls_mem_if()                                  ;
-  axi4_lite_if     if_imem_axi_if( .aclk(clk), .aresetn(rst_n) );
-  axi4_lite_if     ls_mem_axi_if ( .aclk(clk), .aresetn(rst_n) );
+  axi4_if          if_imem_axi_if( .aclk(clk), .aresetn(rst_n) );
+  axi4_if          ls_mem_axi_if ( .aclk(clk), .aresetn(rst_n) );
 
   /////////
   /* AXI */
   /////////
-  axi4_lite_arbiter u_axi_arbiter (
+  axi4_arbiter u_axi_arbiter (
     // Interfaces
     .i0_axi_if     ( if_imem_axi_if    ),
     .i1_axi_if     ( ls_mem_axi_if     ),
     .o_axi_if      ( o_mem_axi_if      )
   );
 
-  axi4_lite_master u_axi_master_if (
+  axi4_master u_axi_master_if (
     // Interfaces
     .s_bus_if      ( if_imem_if        ),
     .m_axi_if      ( if_imem_axi_if    )
   );
 
-  axi4_lite_master u_axi_master_ls (
+  axi4_master u_axi_master_ls (
     // Interfaces
     .s_bus_if      ( ls_mem_if      ),
     .m_axi_if      ( ls_mem_axi_if  )

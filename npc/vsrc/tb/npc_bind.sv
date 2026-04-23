@@ -19,7 +19,7 @@ bind npc_wbu dpi_probe_wbu u_dpi_probe_wbu (
   .wbu_commit_valid_i ( commit_valid_o  )
 );
 
-bind axi4_lite_master probe_axi_master u_probe_axi_master (
+bind axi4_master probe_axi_master u_probe_axi_master (
   // Inputs
   .bvalid    ( m_axi_if.bvalid  ),
   .rvalid    ( m_axi_if.rvalid  ),
@@ -27,7 +27,7 @@ bind axi4_lite_master probe_axi_master u_probe_axi_master (
   .rresp     ( m_axi_if.rresp   )
 );
 
-bind axi4_lite_xbar probe_xbar u_probe_xbar (
+bind axi4_xbar probe_xbar u_probe_xbar (
   // Inputs
   .arvalid      ( s_axi_if.arvalid ),
   .awvalid      ( s_axi_if.awvalid ),

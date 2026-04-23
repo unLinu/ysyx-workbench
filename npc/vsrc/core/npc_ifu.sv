@@ -62,6 +62,7 @@ module npc_ifu import isa_pkg::PC_RST; (
   assign  ifetch_if.req_addr  = pc                                  ;
   assign  ifetch_if.req_data  = '0                                  ;
   assign  ifetch_if.req_wstrb = '0                                  ;
+  assign  ifetch_if.req_size  = `AXI_SIZE_WORD                      ;
   assign  ifetch_if.req_is_write = 1'b0                             ;
   assign  ifetch_if.req_valid = (state == IF_REQ)                   ;
   // Response Channel

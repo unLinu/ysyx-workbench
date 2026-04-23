@@ -1,7 +1,8 @@
-module axi4_lite_master (
+`include "npc_defines.svh"
+module axi4_master (
   // interface
   core_mem_if.slave               s_bus_if      ,
-  axi4_lite_if.master             m_axi_if
+  axi4_if.master                  m_axi_if
 );
 
 /* ==================================================================== */
@@ -124,11 +125,19 @@ module axi4_lite_master (
     if (~m_axi_if.aresetn) begin
       m_axi_if.awaddr  <= '0;
       m_axi_if.awprot  <= '0;
+      m_axi_if.awid    <= '0;
+      m_axi_if.awlen   <= '0;
+      m_axi_if.awsize  <= '0;
+      m_axi_if.awburst <= '0;
       m_axi_if.awvalid <= 1'b0;
     end
     else if (w_req_done) begin
       m_axi_if.awaddr  <= s_bus_if.req_addr;
-      m_axi_if.awprot  <= 3'b000;   // normal, secure, inst
+      m_axi_if.awprot  <= 3'b000;             // normal, secure, inst
+      m_axi_if.awid    <= '0;                 // not used
+      m_axi_if.awlen   <= '0;                 // single beat
+      m_axi_if.awsize  <= s_bus_if.req_size;
+      m_axi_if.awburst <= `AXI_BURST_INCR;    // fixed burst
       m_axi_if.awvalid <= 1'b1;
     end
     else if (aw_done) begin
@@ -155,11 +164,13 @@ module axi4_lite_master (
     if (~m_axi_if.aresetn) begin
       m_axi_if.wdata  <= '0;
       m_axi_if.wstrb  <= '0;
+      m_axi_if.wlast  <= 1'b0;
       m_axi_if.wvalid <= 1'b0;
     end
     else if (w_req_done) begin
       m_axi_if.wdata  <= s_bus_if.req_data;
       m_axi_if.wstrb  <= s_bus_if.req_wstrb;
+      m_axi_if.wlast  <= 1'b1;                // only one beat
       m_axi_if.wvalid <= 1'b1;
     end
     else if (w_done) begin
@@ -196,11 +207,19 @@ module axi4_lite_master (
     if (~m_axi_if.aresetn) begin
       m_axi_if.araddr  <= '0;
       m_axi_if.arprot  <= '0;
+      m_axi_if.arid    <= '0;
+      m_axi_if.arlen   <= '0;
+      m_axi_if.arsize  <= '0;
+      m_axi_if.arburst <= '0;
       m_axi_if.arvalid <= 1'b0;
     end
     else if (r_req_done) begin
       m_axi_if.araddr  <= s_bus_if.req_addr;
-      m_axi_if.arprot  <= 3'b100;   // normal, secure, inst
+      m_axi_if.arprot  <= 3'b100;               // normal, secure, inst
+      m_axi_if.arid    <= '0;                   // not used
+      m_axi_if.arlen   <= '0;                   // single beat
+      m_axi_if.arsize  <= s_bus_if.req_size;
+      m_axi_if.arburst <= `AXI_BURST_INCR;
       m_axi_if.arvalid <= 1'b1;
     end
     else if (ar_done) begin

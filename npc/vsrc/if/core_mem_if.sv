@@ -4,7 +4,7 @@ interface core_mem_if #(
 );
 
   // +--------+                                                          +--------+
-  // | Master | -- req_addr, req_data, req_wstrb --------------------->  | Slave  |
+  // | Master | -- req_addr, req_data, req_wstrb, req_size ----------->  | Slave  |
   // |        | -- req_is_write, req_valid --------------------------->  |        |
   // |        | <- req_ready -----------------------------------------   |        |
   // |        | <- rsp_data, rsp_err, rsp_valid ----------------------   |        |
@@ -15,6 +15,7 @@ interface core_mem_if #(
   logic   [ADDR_WIDTH-1:0]    req_addr      ;
   logic   [DATA_WIDTH-1:0]    req_data      ;
   logic   [DATA_WIDTH/8-1:0]  req_wstrb     ;
+  logic   [ 2:0]              req_size      ;
   logic                       req_is_write  ;
   logic                       req_valid     ;
   logic                       req_ready     ;
@@ -28,7 +29,7 @@ interface core_mem_if #(
   modport master (
     // Request Channel
     input   req_ready,
-    output  req_addr, req_data, req_wstrb, req_is_write, req_valid,
+    output  req_addr, req_data, req_wstrb, req_size, req_is_write, req_valid,
     // Response Channel
     input   rsp_data, rsp_err, rsp_valid,
     output  rsp_ready
@@ -37,7 +38,7 @@ interface core_mem_if #(
   modport slave (
     // Request Channel
     output  req_ready,
-    input   req_addr, req_data, req_wstrb, req_is_write, req_valid,
+    input   req_addr, req_data, req_wstrb, req_size, req_is_write, req_valid,
     // Response Channel
     output  rsp_data, rsp_err, rsp_valid,
     input   rsp_ready

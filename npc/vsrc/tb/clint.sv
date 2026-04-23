@@ -1,7 +1,7 @@
 `include "npc_defines.svh"
 module clint (
   // interface
-  axi4_lite_if.slave          s_axi_if
+  axi4_if.slave          s_axi_if
 );
 
 /* ==================================================================== */
@@ -12,6 +12,8 @@ module clint (
 
   // MTIME Register
   logic   [63:0]  mtime       ; // Machine Time Register (read-only)
+
+  logic   [ 3:0]  awid_q      ;
 
   // handshake success
   logic         ar_done       ;
@@ -95,35 +97,37 @@ module clint (
   always_ff @(posedge s_axi_if.aclk or negedge s_axi_if.aresetn) begin
     if (~s_axi_if.aresetn) begin
       aw_get_q <= 1'b0;
+      awid_q   <= '0;
     end
     else if (aw_w_all_done) begin
       aw_get_q <= 1'b0;
     end
     else if (aw_done) begin
       aw_get_q <= 1'b1;
+      awid_q   <= s_axi_if.awid;
     end
   end
 
   always_ff @(posedge s_axi_if.aclk or negedge s_axi_if.aresetn) begin
-    if (~s_axi_if.aresetn) begin
+    if (~s_axi_if.aresetn)
       w_get_q <= 1'b0;
-    end
     else if (aw_w_all_done) begin
       w_get_q <= 1'b0;
     end
-    else if (w_done) begin
+    else if (w_done)
       w_get_q <= 1'b1;
-    end
   end
 
   always_ff @(posedge s_axi_if.aclk or negedge s_axi_if.aresetn) begin
     if (~s_axi_if.aresetn) begin
       s_axi_if.bresp  <= '0;
+      s_axi_if.bid    <= '0;
       s_axi_if.bvalid <= 1'b0;
     end
     else if (aw_w_all_done) begin
       $display("MTIME Register is not writable!");
       s_axi_if.bresp  <= `AXI_SLVERR;
+      s_axi_if.bid    <= aw_get_q ? awid_q : s_axi_if.awid;
       s_axi_if.bvalid <= 1'b1;
     end
     else if (b_done) begin
@@ -142,11 +146,15 @@ module clint (
     if (~s_axi_if.aresetn) begin
       s_axi_if.rdata  <= '0;
       s_axi_if.rresp  <= '0;
+      s_axi_if.rid    <= '0;
+      s_axi_if.rlast  <= 1'b0;
       s_axi_if.rvalid <= 1'b0;
     end
     else if (ar_done) begin
       s_axi_if.rdata  <= s_axi_if.araddr == '0 ? mtime[31:0] : (s_axi_if.araddr == `XLEN'd4 ? mtime[63:32] : '0);
       s_axi_if.rresp  <= s_axi_if.araddr == '0 || s_axi_if.araddr == `XLEN'd4 ? `AXI_OKAY : `AXI_SLVERR;
+      s_axi_if.rid    <= s_axi_if.arid;
+      s_axi_if.rlast  <= 1'b1;
       difftest_set_skip();
       s_axi_if.rvalid <= 1'b1;
     end

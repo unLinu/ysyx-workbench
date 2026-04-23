@@ -20,10 +20,10 @@ module npc_top (
 /* =========================== Instantiation ========================== */
 /* ==================================================================== */
 
-  axi4_lite_if     o_mem_axi_if   ( .aclk(clk), .aresetn(rst_n) );
-  axi4_lite_if     sram_axi_if    ( .aclk(clk), .aresetn(rst_n) );
-  axi4_lite_if     uart_axi_if    ( .aclk(clk), .aresetn(rst_n) );
-  axi4_lite_if     clint_axi_if   ( .aclk(clk), .aresetn(rst_n) );
+  axi4_if     o_mem_axi_if   ( .aclk(clk), .aresetn(rst_n) );
+  axi4_if     sram_axi_if    ( .aclk(clk), .aresetn(rst_n) );
+  axi4_if     uart_axi_if    ( .aclk(clk), .aresetn(rst_n) );
+  axi4_if     clint_axi_if   ( .aclk(clk), .aresetn(rst_n) );
 
   npc_core u_core (
     // Interfaces
@@ -35,7 +35,7 @@ module npc_top (
     .rst_n         ( rst_n             )
   );
 
-  axi4_lite_xbar u_axi_xbar (
+  axi4_xbar u_axi_xbar (
     // Interfaces
     .s_axi_if        ( o_mem_axi_if    ),
     .m_uart_axi_if   ( uart_axi_if     ),

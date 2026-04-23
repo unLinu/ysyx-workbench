@@ -1,6 +1,6 @@
 module dpi_sim_sram (
   // interface
-  axi4_lite_if.slave          s_axi_if
+  axi4_if.slave          s_axi_if
 );
 
 /* ==================================================================== */
@@ -10,6 +10,11 @@ module dpi_sim_sram (
   // DPI-C function declarations
   import "DPI-C" function int mem_read (input int raddr);
   import "DPI-C" function void mem_write (input int waddr, input int wdata, input byte wstrb);
+
+  logic   [31:0]  awaddr_q ;
+  logic   [ 3:0]  awid_q   ;
+  logic   [31:0]  wdata_q  ;
+  logic   [ 3:0]  wstrb_q  ;
 
   // handshake success
   logic         ar_done       ;
@@ -83,35 +88,47 @@ module dpi_sim_sram (
   always_ff @(posedge s_axi_if.aclk or negedge s_axi_if.aresetn) begin
     if (~s_axi_if.aresetn) begin
       aw_get_q <= 1'b0;
+      awaddr_q <= '0;
+      awid_q   <= '0;
     end
     else if (aw_w_all_done) begin
       aw_get_q <= 1'b0;
     end
     else if (aw_done) begin
       aw_get_q <= 1'b1;
+      awaddr_q <= s_axi_if.awaddr;
+      awid_q   <= s_axi_if.awid;
     end
   end
 
   always_ff @(posedge s_axi_if.aclk or negedge s_axi_if.aresetn) begin
     if (~s_axi_if.aresetn) begin
       w_get_q <= 1'b0;
+      wdata_q <= '0;
+      wstrb_q <= '0;
     end
     else if (aw_w_all_done) begin
       w_get_q <= 1'b0;
     end
     else if (w_done) begin
       w_get_q <= 1'b1;
+      wdata_q <= s_axi_if.wdata;
+      wstrb_q <= s_axi_if.wstrb;
     end
   end
 
   always_ff @(posedge s_axi_if.aclk or negedge s_axi_if.aresetn) begin
     if (~s_axi_if.aresetn) begin
-      s_axi_if.bresp <= '0;
+      s_axi_if.bresp  <= '0;
+      s_axi_if.bid    <= '0;
       s_axi_if.bvalid <= 1'b0;
     end
     else if (aw_w_all_done) begin
-      mem_write(s_axi_if.awaddr, s_axi_if.wdata, byte'(s_axi_if.wstrb));
-      s_axi_if.bresp <= '0;
+      mem_write(aw_get_q ? awaddr_q : s_axi_if.awaddr,
+                w_get_q ? wdata_q : s_axi_if.wdata,
+                byte'(w_get_q ? {4'b0, wstrb_q} : {4'b0, s_axi_if.wstrb}));
+      s_axi_if.bresp  <= '0;
+      s_axi_if.bid    <= aw_get_q ? awid_q : s_axi_if.awid;
       s_axi_if.bvalid <= 1'b1;
     end
     else if (b_done) begin
@@ -128,13 +145,17 @@ module dpi_sim_sram (
 
   always_ff @(posedge s_axi_if.aclk or negedge s_axi_if.aresetn) begin
     if (~s_axi_if.aresetn) begin
-      s_axi_if.rdata <= '0;
-      s_axi_if.rresp <= '0;
+      s_axi_if.rdata  <= '0;
+      s_axi_if.rresp  <= '0;
+      s_axi_if.rid    <= '0;
+      s_axi_if.rlast  <= 1'b0;
       s_axi_if.rvalid <= 1'b0;
     end
     else if (ar_done) begin
-      s_axi_if.rdata <= mem_read(s_axi_if.araddr);
-      s_axi_if.rresp <= '0;
+      s_axi_if.rdata  <= mem_read(s_axi_if.araddr);
+      s_axi_if.rresp  <= '0;
+      s_axi_if.rid    <= s_axi_if.arid;
+      s_axi_if.rlast  <= 1'b1;
       s_axi_if.rvalid <= 1'b1;
     end
     else if (r_done) begin

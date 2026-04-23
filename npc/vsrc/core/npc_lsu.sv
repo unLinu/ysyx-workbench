@@ -81,6 +81,25 @@ module npc_lsu import ctrl_pkg::*; (
                                (rx_data.mem_wr_en | rx_data.mem_rd_en)      ;
 
   always_comb begin
+    m_mem_if.req_size = `AXI_SIZE_WORD;
+    if (m_mem_if.req_is_write) begin
+      unique case (rx_data.st_type)
+        ST_TYPE_B: m_mem_if.req_size = `AXI_SIZE_BYTE;
+        ST_TYPE_H: m_mem_if.req_size = `AXI_SIZE_HWORD;
+        ST_TYPE_W: m_mem_if.req_size = `AXI_SIZE_WORD;
+      endcase
+    end
+    else if (~m_mem_if.req_is_write) begin
+      unique case (rx_data.ld_type)
+        LD_TYPE_B, LD_TYPE_BU: m_mem_if.req_size = `AXI_SIZE_BYTE;
+        LD_TYPE_H, LD_TYPE_HU: m_mem_if.req_size = `AXI_SIZE_HWORD;
+        LD_TYPE_W: m_mem_if.req_size = `AXI_SIZE_WORD;
+        default: req_size_ld_type_err: assert(0) else $fatal(1, "Invalid ld_type!");
+      endcase
+    end
+  end
+
+  always_comb begin
     m_mem_if.req_wstrb = '0;
     if (rx_data.mem_wr_en & rx_if.valid) begin
       unique case (rx_data.st_type)
