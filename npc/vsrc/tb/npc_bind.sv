@@ -1,5 +1,9 @@
 module npc_bind;
 
+bind npc_core dpi_halt u_dpi_halt (
+  .ebreak_i ( ebreak_o )
+);
+
 bind npc_ifu dpi_probe_pc u_dpi_probe_pc (
   .pc_i   ( pc        ),
   .dnpc_i ( next_pc   )

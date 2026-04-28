@@ -1,8 +1,8 @@
 module axi4_arbiter (
   // interface
-  axi4_if.slave              i0_axi_if       ,
-  axi4_if.slave              i1_axi_if       ,
-  axi4_if.master             o_axi_if
+  axi4_if.slave              s0_axi_if       ,
+  axi4_if.slave              s1_axi_if       ,
+  axi4_if.master             m_axi_if
 );
 
 /* ==================================================================== */
@@ -17,7 +17,7 @@ module axi4_arbiter (
   // Internal signals
   logic           txn_is_write_q    ;
   logic           txn_done          ;
-  logic           i0_req, i1_req    ;
+  logic           s0_req, s1_req    ;
 
   arb_state_e     state, next_state ;
 
@@ -28,8 +28,8 @@ module axi4_arbiter (
   //////////////////////
   /* FSM State Update */
   //////////////////////
-  always_ff @(posedge i0_axi_if.aclk or negedge i0_axi_if.aresetn) begin
-    if (~i0_axi_if.aresetn)
+  always_ff @(posedge s0_axi_if.aclk or negedge s0_axi_if.aresetn) begin
+    if (~s0_axi_if.aresetn)
       state <= IDLE;
     else
       state <= next_state;
@@ -41,9 +41,9 @@ module axi4_arbiter (
   always_comb begin
     unique case (state)
       IDLE: begin
-        if (i0_req)
+        if (s0_req)
           next_state = I0_GRANT;
-        else if (i1_req)
+        else if (s1_req)
           next_state = I1_GRANT;
         else
           next_state = IDLE;
@@ -57,136 +57,136 @@ module axi4_arbiter (
   /////////////
   /* Arbiter */
   /////////////
-  assign  i0_req = i0_axi_if.awvalid | i0_axi_if.wvalid | i0_axi_if.arvalid;
-  assign  i1_req = i1_axi_if.awvalid | i1_axi_if.wvalid | i1_axi_if.arvalid;
-  assign  txn_done = txn_is_write_q ? (o_axi_if.bvalid & o_axi_if.bready) : (o_axi_if.rvalid & o_axi_if.rready);
+  assign  s0_req = s0_axi_if.awvalid | s0_axi_if.wvalid | s0_axi_if.arvalid;
+  assign  s1_req = s1_axi_if.awvalid | s1_axi_if.wvalid | s1_axi_if.arvalid;
+  assign  txn_done = txn_is_write_q ? (m_axi_if.bvalid & m_axi_if.bready) : (m_axi_if.rvalid & m_axi_if.rready);
 
-  always_ff @(posedge i0_axi_if.aclk or negedge i0_axi_if.aresetn) begin
-    if (~i0_axi_if.aresetn)
+  always_ff @(posedge s0_axi_if.aclk or negedge s0_axi_if.aresetn) begin
+    if (~s0_axi_if.aresetn)
       txn_is_write_q <= 1'b0;
     else if (next_state == I0_GRANT && state == IDLE) begin
-      txn_is_write_q <= (i0_axi_if.arvalid) ? 1'b0 : 1'b1;
+      txn_is_write_q <= (s0_axi_if.arvalid) ? 1'b0 : 1'b1;
     end
     else if (next_state == I1_GRANT && state == IDLE) begin
-      txn_is_write_q <= (i1_axi_if.arvalid) ? 1'b0 : 1'b1;
+      txn_is_write_q <= (s1_axi_if.arvalid) ? 1'b0 : 1'b1;
     end
   end
 
   always_comb begin
-    o_axi_if.awaddr  = '0;
-    o_axi_if.awprot  = '0;
-    o_axi_if.awid    = '0;
-    o_axi_if.awlen   = '0;
-    o_axi_if.awsize  = '0;
-    o_axi_if.awburst = '0;
-    o_axi_if.awvalid = 1'b0;
-    o_axi_if.wdata   = '0;
-    o_axi_if.wstrb   = '0;
-    o_axi_if.wlast   = 1'b0;
-    o_axi_if.wvalid  = 1'b0;
-    o_axi_if.bready  = 1'b0;
-    o_axi_if.araddr  = '0;
-    o_axi_if.arprot  = '0;
-    o_axi_if.arid    = '0;
-    o_axi_if.arlen   = '0;
-    o_axi_if.arsize  = '0;
-    o_axi_if.arburst = '0;
-    o_axi_if.arvalid = 1'b0;
-    o_axi_if.rready  = 1'b0;
+    m_axi_if.awaddr  = '0;
+    m_axi_if.awprot  = '0;
+    m_axi_if.awid    = '0;
+    m_axi_if.awlen   = '0;
+    m_axi_if.awsize  = '0;
+    m_axi_if.awburst = '0;
+    m_axi_if.awvalid = 1'b0;
+    m_axi_if.wdata   = '0;
+    m_axi_if.wstrb   = '0;
+    m_axi_if.wlast   = 1'b0;
+    m_axi_if.wvalid  = 1'b0;
+    m_axi_if.bready  = 1'b0;
+    m_axi_if.araddr  = '0;
+    m_axi_if.arprot  = '0;
+    m_axi_if.arid    = '0;
+    m_axi_if.arlen   = '0;
+    m_axi_if.arsize  = '0;
+    m_axi_if.arburst = '0;
+    m_axi_if.arvalid = 1'b0;
+    m_axi_if.rready  = 1'b0;
 
-    i0_axi_if.awready = 1'b0;
-    i0_axi_if.wready  = 1'b0;
-    i0_axi_if.bresp   = '0;
-    i0_axi_if.bid     = '0;
-    i0_axi_if.bvalid  = 1'b0;
-    i0_axi_if.arready = 1'b0;
-    i0_axi_if.rdata   = '0;
-    i0_axi_if.rresp   = '0;
-    i0_axi_if.rid     = '0;
-    i0_axi_if.rlast   = 1'b0;
-    i0_axi_if.rvalid  = 1'b0;
+    s0_axi_if.awready = 1'b0;
+    s0_axi_if.wready  = 1'b0;
+    s0_axi_if.bresp   = '0;
+    s0_axi_if.bid     = '0;
+    s0_axi_if.bvalid  = 1'b0;
+    s0_axi_if.arready = 1'b0;
+    s0_axi_if.rdata   = '0;
+    s0_axi_if.rresp   = '0;
+    s0_axi_if.rid     = '0;
+    s0_axi_if.rlast   = 1'b0;
+    s0_axi_if.rvalid  = 1'b0;
 
-    i1_axi_if.awready = 1'b0;
-    i1_axi_if.wready  = 1'b0;
-    i1_axi_if.bresp   = '0;
-    i1_axi_if.bid     = '0;
-    i1_axi_if.bvalid  = 1'b0;
-    i1_axi_if.arready = 1'b0;
-    i1_axi_if.rdata   = '0;
-    i1_axi_if.rresp   = '0;
-    i1_axi_if.rid     = '0;
-    i1_axi_if.rlast   = 1'b0;
-    i1_axi_if.rvalid  = 1'b0;
+    s1_axi_if.awready = 1'b0;
+    s1_axi_if.wready  = 1'b0;
+    s1_axi_if.bresp   = '0;
+    s1_axi_if.bid     = '0;
+    s1_axi_if.bvalid  = 1'b0;
+    s1_axi_if.arready = 1'b0;
+    s1_axi_if.rdata   = '0;
+    s1_axi_if.rresp   = '0;
+    s1_axi_if.rid     = '0;
+    s1_axi_if.rlast   = 1'b0;
+    s1_axi_if.rvalid  = 1'b0;
 
     unique case (state)
       I0_GRANT: begin
-        o_axi_if.awaddr   = i0_axi_if.awaddr;
-        o_axi_if.awprot   = i0_axi_if.awprot;
-        o_axi_if.awid     = i0_axi_if.awid;
-        o_axi_if.awlen    = i0_axi_if.awlen;
-        o_axi_if.awsize   = i0_axi_if.awsize;
-        o_axi_if.awburst  = i0_axi_if.awburst;
-        o_axi_if.awvalid  = i0_axi_if.awvalid;
-        o_axi_if.wdata    = i0_axi_if.wdata;
-        o_axi_if.wstrb    = i0_axi_if.wstrb;
-        o_axi_if.wlast    = i0_axi_if.wlast;
-        o_axi_if.wvalid   = i0_axi_if.wvalid;
-        o_axi_if.bready   = i0_axi_if.bready;
-        o_axi_if.araddr   = i0_axi_if.araddr;
-        o_axi_if.arprot   = i0_axi_if.arprot;
-        o_axi_if.arid     = i0_axi_if.arid;
-        o_axi_if.arlen    = i0_axi_if.arlen;
-        o_axi_if.arsize   = i0_axi_if.arsize;
-        o_axi_if.arburst  = i0_axi_if.arburst;
-        o_axi_if.arvalid  = i0_axi_if.arvalid;
-        o_axi_if.rready   = i0_axi_if.rready;
+        m_axi_if.awaddr   = s0_axi_if.awaddr;
+        m_axi_if.awprot   = s0_axi_if.awprot;
+        m_axi_if.awid     = s0_axi_if.awid;
+        m_axi_if.awlen    = s0_axi_if.awlen;
+        m_axi_if.awsize   = s0_axi_if.awsize;
+        m_axi_if.awburst  = s0_axi_if.awburst;
+        m_axi_if.awvalid  = s0_axi_if.awvalid;
+        m_axi_if.wdata    = s0_axi_if.wdata;
+        m_axi_if.wstrb    = s0_axi_if.wstrb;
+        m_axi_if.wlast    = s0_axi_if.wlast;
+        m_axi_if.wvalid   = s0_axi_if.wvalid;
+        m_axi_if.bready   = s0_axi_if.bready;
+        m_axi_if.araddr   = s0_axi_if.araddr;
+        m_axi_if.arprot   = s0_axi_if.arprot;
+        m_axi_if.arid     = s0_axi_if.arid;
+        m_axi_if.arlen    = s0_axi_if.arlen;
+        m_axi_if.arsize   = s0_axi_if.arsize;
+        m_axi_if.arburst  = s0_axi_if.arburst;
+        m_axi_if.arvalid  = s0_axi_if.arvalid;
+        m_axi_if.rready   = s0_axi_if.rready;
 
-        i0_axi_if.awready = o_axi_if.awready;
-        i0_axi_if.wready  = o_axi_if.wready;
-        i0_axi_if.bresp   = o_axi_if.bresp;
-        i0_axi_if.bid     = o_axi_if.bid;
-        i0_axi_if.bvalid  = o_axi_if.bvalid;
-        i0_axi_if.arready = o_axi_if.arready;
-        i0_axi_if.rdata   = o_axi_if.rdata;
-        i0_axi_if.rresp   = o_axi_if.rresp;
-        i0_axi_if.rid     = o_axi_if.rid;
-        i0_axi_if.rlast   = o_axi_if.rlast;
-        i0_axi_if.rvalid  = o_axi_if.rvalid;
+        s0_axi_if.awready = m_axi_if.awready;
+        s0_axi_if.wready  = m_axi_if.wready;
+        s0_axi_if.bresp   = m_axi_if.bresp;
+        s0_axi_if.bid     = m_axi_if.bid;
+        s0_axi_if.bvalid  = m_axi_if.bvalid;
+        s0_axi_if.arready = m_axi_if.arready;
+        s0_axi_if.rdata   = m_axi_if.rdata;
+        s0_axi_if.rresp   = m_axi_if.rresp;
+        s0_axi_if.rid     = m_axi_if.rid;
+        s0_axi_if.rlast   = m_axi_if.rlast;
+        s0_axi_if.rvalid  = m_axi_if.rvalid;
       end
 
       I1_GRANT: begin
-        o_axi_if.awaddr   = i1_axi_if.awaddr;
-        o_axi_if.awprot   = i1_axi_if.awprot;
-        o_axi_if.awid     = i1_axi_if.awid;
-        o_axi_if.awlen    = i1_axi_if.awlen;
-        o_axi_if.awsize   = i1_axi_if.awsize;
-        o_axi_if.awburst  = i1_axi_if.awburst;
-        o_axi_if.awvalid  = i1_axi_if.awvalid;
-        o_axi_if.wdata    = i1_axi_if.wdata;
-        o_axi_if.wstrb    = i1_axi_if.wstrb;
-        o_axi_if.wlast    = i1_axi_if.wlast;
-        o_axi_if.wvalid   = i1_axi_if.wvalid;
-        o_axi_if.bready   = i1_axi_if.bready;
-        o_axi_if.araddr   = i1_axi_if.araddr;
-        o_axi_if.arprot   = i1_axi_if.arprot;
-        o_axi_if.arid     = i1_axi_if.arid;
-        o_axi_if.arlen    = i1_axi_if.arlen;
-        o_axi_if.arsize   = i1_axi_if.arsize;
-        o_axi_if.arburst  = i1_axi_if.arburst;
-        o_axi_if.arvalid  = i1_axi_if.arvalid;
-        o_axi_if.rready   = i1_axi_if.rready;
+        m_axi_if.awaddr   = s1_axi_if.awaddr;
+        m_axi_if.awprot   = s1_axi_if.awprot;
+        m_axi_if.awid     = s1_axi_if.awid;
+        m_axi_if.awlen    = s1_axi_if.awlen;
+        m_axi_if.awsize   = s1_axi_if.awsize;
+        m_axi_if.awburst  = s1_axi_if.awburst;
+        m_axi_if.awvalid  = s1_axi_if.awvalid;
+        m_axi_if.wdata    = s1_axi_if.wdata;
+        m_axi_if.wstrb    = s1_axi_if.wstrb;
+        m_axi_if.wlast    = s1_axi_if.wlast;
+        m_axi_if.wvalid   = s1_axi_if.wvalid;
+        m_axi_if.bready   = s1_axi_if.bready;
+        m_axi_if.araddr   = s1_axi_if.araddr;
+        m_axi_if.arprot   = s1_axi_if.arprot;
+        m_axi_if.arid     = s1_axi_if.arid;
+        m_axi_if.arlen    = s1_axi_if.arlen;
+        m_axi_if.arsize   = s1_axi_if.arsize;
+        m_axi_if.arburst  = s1_axi_if.arburst;
+        m_axi_if.arvalid  = s1_axi_if.arvalid;
+        m_axi_if.rready   = s1_axi_if.rready;
 
-        i1_axi_if.awready = o_axi_if.awready;
-        i1_axi_if.wready  = o_axi_if.wready;
-        i1_axi_if.bresp   = o_axi_if.bresp;
-        i1_axi_if.bid     = o_axi_if.bid;
-        i1_axi_if.bvalid  = o_axi_if.bvalid;
-        i1_axi_if.arready = o_axi_if.arready;
-        i1_axi_if.rdata   = o_axi_if.rdata;
-        i1_axi_if.rresp   = o_axi_if.rresp;
-        i1_axi_if.rid     = o_axi_if.rid;
-        i1_axi_if.rlast   = o_axi_if.rlast;
-        i1_axi_if.rvalid  = o_axi_if.rvalid;
+        s1_axi_if.awready = m_axi_if.awready;
+        s1_axi_if.wready  = m_axi_if.wready;
+        s1_axi_if.bresp   = m_axi_if.bresp;
+        s1_axi_if.bid     = m_axi_if.bid;
+        s1_axi_if.bvalid  = m_axi_if.bvalid;
+        s1_axi_if.arready = m_axi_if.arready;
+        s1_axi_if.rdata   = m_axi_if.rdata;
+        s1_axi_if.rresp   = m_axi_if.rresp;
+        s1_axi_if.rid     = m_axi_if.rid;
+        s1_axi_if.rlast   = m_axi_if.rlast;
+        s1_axi_if.rvalid  = m_axi_if.rvalid;
       end
 
       default: begin

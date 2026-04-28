@@ -2,8 +2,8 @@ module npc_core (
   // System signals
   input   logic               clk               ,
   input   logic               rst_n             ,
-  // AXI4-Lite Interface
-  axi4_if.master         o_mem_axi_if      ,
+  // AXI4 Interface
+  axi4_if.master              m_axi_if          ,
   // Halt [Debug]
   output  logic               ebreak_o
 );
@@ -66,9 +66,9 @@ module npc_core (
   /////////
   axi4_arbiter u_axi_arbiter (
     // Interfaces
-    .i0_axi_if     ( if_imem_axi_if    ),
-    .i1_axi_if     ( ls_mem_axi_if     ),
-    .o_axi_if      ( o_mem_axi_if      )
+    .s0_axi_if     ( if_imem_axi_if    ),
+    .s1_axi_if     ( ls_mem_axi_if     ),
+    .m_axi_if      ( m_axi_if          )
   );
 
   axi4_master u_axi_master_if (

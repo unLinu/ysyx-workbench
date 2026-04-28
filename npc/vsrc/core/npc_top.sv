@@ -27,7 +27,7 @@ module npc_top (
 
   npc_core u_core (
     // Interfaces
-    .o_mem_axi_if  ( o_mem_axi_if      ),
+    .m_axi_if      ( o_mem_axi_if      ),
     // Outputs
     .ebreak_o      ( c2halt_ebreak     ),
     // Inputs

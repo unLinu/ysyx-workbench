@@ -67,6 +67,7 @@ int isa_exec_once(Decode *s) {
     timeout_cnt = 0;
   last_pc = s->pc;
   if (timeout_cnt > 200) {
+    printf(ANSI_FMT("NEMU execution timeout!" , ANSI_FG_RED) "\n");
     set_nemu_state(NEMU_ABORT, s->pc, -1);
   }
 #endif

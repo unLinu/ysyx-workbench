@@ -1,6 +1,6 @@
-module npc_yosys_top (
-  input   logic         clk,
-  input   logic         rst_n,
+module npc_core_wrapper (
+  input   logic         clock,
+  input   logic         reset,
 
   output  logic [ 3:0]  io_master_awid,
   output  logic [31:0]  io_master_awaddr,
@@ -41,10 +41,7 @@ module npc_yosys_top (
   output  logic         ebreak_o
 );
 
-  axi4_if m_axi_if (
-    .aclk     ( clk   ),
-    .aresetn  ( rst_n )
-  );
+  axi4_if m_axi_if ( .aclk(clock), .aresetn (~reset));
 
   assign io_master_awid         = m_axi_if.awid;
   assign io_master_awaddr       = m_axi_if.awaddr;
@@ -83,10 +80,10 @@ module npc_yosys_top (
   assign io_master_rready       = m_axi_if.rready;
 
   npc_core u_core (
-    .clk          ( clk         ),
-    .rst_n        ( rst_n       ),
+    .clk          ( clock        ),
+    .rst_n        ( ~reset       ),
     .m_axi_if     ( m_axi_if     ),
-    .ebreak_o     ( ebreak_o    )
+    .ebreak_o     ( ebreak_o     )
   );
 
 endmodule

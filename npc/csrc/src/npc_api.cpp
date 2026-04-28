@@ -1,5 +1,5 @@
-#include "Vnpc_top.h"
-#include "Vnpc_top__Dpi.h"
+#include "VysyxSoCFull.h"
+#include "VysyxSoCFull__Dpi.h"
 #include "../include/macro.h"
 #include "../include/npc_utils.h" // IWYU pragma: keep
 #include "verilated.h"
@@ -28,7 +28,7 @@ typedef enum {
 } csr_addr_t;
 
 static VerilatedContext *contextp = nullptr;
-static Vnpc_top *top = nullptr;
+static VysyxSoCFull *top = nullptr;
 #if VM_TRACE_FST
 static VerilatedFstC *tfp = nullptr;
 #elif VM_TRACE_VCD
@@ -40,7 +40,7 @@ static svScope csr_scope = nullptr;
 static svScope pc_scope = nullptr;
 static svScope wbu_scope = nullptr;
 
-const static int RESET_TIME = 10;
+const static int RESET_TIME = 20;
 
 static void npc_regcpy(diff_context_t *dut) {
   svSetScope(gpr_scope);
@@ -63,18 +63,19 @@ extern "C" {
 
 __EXPORT void npc_init(int argc, char **argv) {
   // Initialize top module and trace
+  Verilated::commandArgs(argc, argv);
   const char *NPC_HOME = getenv("NPC_HOME");
   if (NPC_HOME == nullptr) { panic("Can't find NPC_HOME environment variable"); }
   std::string wave_path = std::string(NPC_HOME) + "/build/simx";
   contextp = new VerilatedContext;
   contextp->commandArgs(argc, argv);
-  top = new Vnpc_top{contextp};
+  top = new VysyxSoCFull{contextp};
 
   // Set DPI-C scope name
-  gpr_scope = svGetScopeFromName("TOP.npc_top.u_core.u_idu.u_regfile.u_dpi_probe_gpr");
-  csr_scope = svGetScopeFromName("TOP.npc_top.u_core.u_csr.u_dpi_probe_csr");
-  pc_scope  = svGetScopeFromName("TOP.npc_top.u_core.u_ifu.u_dpi_probe_pc");
-  wbu_scope = svGetScopeFromName("TOP.npc_top.u_core.u_wbu.u_dpi_probe_wbu");
+  gpr_scope = svGetScopeFromName("TOP.ysyxSoCFull.asic.cpu.cpu.u_npc_core_wrapper.u_core.u_idu.u_regfile.u_dpi_probe_gpr");
+  csr_scope = svGetScopeFromName("TOP.ysyxSoCFull.asic.cpu.cpu.u_npc_core_wrapper.u_core.u_csr.u_dpi_probe_csr");
+  pc_scope  = svGetScopeFromName("TOP.ysyxSoCFull.asic.cpu.cpu.u_npc_core_wrapper.u_core.u_ifu.u_dpi_probe_pc");
+  wbu_scope = svGetScopeFromName("TOP.ysyxSoCFull.asic.cpu.cpu.u_npc_core_wrapper.u_core.u_wbu.u_dpi_probe_wbu");
  
   Assert(gpr_scope != nullptr, "failed to find gpr scope");
   Assert(csr_scope != nullptr, "failed to find csr scope");
@@ -95,20 +96,20 @@ __EXPORT void npc_init(int argc, char **argv) {
 }
 
 __EXPORT void npc_reset() {
-  top->clk = 0;
-  top->rst_n = 0;
+  top->clock = 0;
+  top->reset = 1;
   top->eval();
   record_wave();
 
   while (contextp->time() < RESET_TIME) {
     contextp->timeInc(1);
-    top->clk = !top->clk;
+    top->clock = !top->clock;
     top->eval();
     record_wave();
   }
 
-  top->clk = 1;
-  top->rst_n = 1;
+  top->clock = 1;
+  top->reset = 0;
   top->eval();
   contextp->timeInc(1);
   record_wave();
@@ -126,7 +127,7 @@ __EXPORT void npc_exec_once(uint32_t *inst, uint32_t *snpc, uint32_t *dnpc) {
     }
   #endif
     // negedge clk
-    top->clk = 0;
+    top->clock = 0;
     top->eval();
     contextp->timeInc(1);
     record_wave();  // record clk = 0
@@ -135,7 +136,7 @@ __EXPORT void npc_exec_once(uint32_t *inst, uint32_t *snpc, uint32_t *dnpc) {
     dpi_get_pc((int *)snpc, (int *)dnpc);
 
     // posedge clk
-    top->clk = 1;
+    top->clock = 1;
     top->eval();    // 更新架构状态
     contextp->timeInc(1);
     record_wave();  // record clk = 1
@@ -171,3 +172,9 @@ __EXPORT void npc_update_reg(diff_context_t *regs) {
 }
 
 } // extern "C"
+
+void vl_fatal(const char *filename, int linenum, const char *hier, const char *msg) {
+  fprintf(stderr, "Fatal error at %s:%d: %s: %s\n", filename, linenum, hier, msg);
+  npc_delete();
+  panic("Verilator fatal error at %s:%d", __FILE__, __LINE__);
+}

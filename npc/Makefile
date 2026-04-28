@@ -4,11 +4,12 @@
 # Variables
 SIMULATOR = verilator
 WAVEVIEWER = surfer
-TOP_MODULE = npc_top
+TOP_MODULE = ysyxSoCFull
 YOSYS_TOP_MODULE = npc_yosys_top
 BUILD_DIR = build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
 NPC_VSRCS = vsrc
+YSYXSOC_VSRCS = $(shell find ../ysyxSoC/perip/ -name "*.v")
 
 # Target path for libnpc.so
 NPC_LIB = $(BUILD_DIR)/libnpc.so
@@ -17,21 +18,25 @@ NPC_CSRCS = $(wildcard $(NPC_HOME)/csrc/src/*.cpp)
 # CFLAGS
 CFLAGS = -fPIC -fvisibility=hidden
 CFLAGS += $(if $(CONFIG_CC_DEBUG), -g, -O3)
+CFLAGS += -DVL_USER_FATAL
 
 # VERILATOR_FLAGS
 VERILATOR_FLAGS = --cc -j $(shell nproc) -Wall --top-module $(TOP_MODULE) --Mdir $(OBJ_DIR)
 VERILATOR_FLAGS += -CFLAGS "$(CFLAGS)"
-VERILATOR_FLAGS += -Wno-fatal
+VERILATOR_FLAGS += -Wno-fatal -Wno-ASSIGNDLY -Wno-PINCONNECTEMPTY -Wno-UNUSEDSIGNAL
 VERILATOR_FLAGS += $(if $(CONFIG_WAVE_VCD), --trace-vcd --trace-threads 1)
 VERILATOR_FLAGS += $(if $(CONFIG_WAVE_FST), --trace-fst --trace-threads 1)
 VERILATOR_FLAGS += --lib-create npc
-VERILATOR_FLAGS += -F $(NPC_VSRCS)/filelist.f $(NPC_CSRCS)
+VERILATOR_FLAGS += -F $(NPC_VSRCS)/filelist.f $(NPC_CSRCS) $(YSYXSOC_VSRCS)
+VERILATOR_FLAGS += --timescale "1ns/1ns" --no-timing
+VERILATOR_FLAGS += --autoflush
 
 verilating: $(VSRCS)
 	@mkdir -p $(OBJ_DIR)
 	$(SIMULATOR) $(VERILATOR_FLAGS) $^
 
 $(NPC_LIB): verilating
+	sed -i 's|-shared -o $$@ $$^|-shared -o $$@ $$^ $$(LDLIBS)|' $(OBJ_DIR)/V$(TOP_MODULE).mk
 	$(MAKE) -C $(OBJ_DIR) -f V$(TOP_MODULE).mk
 
 shared: $(NPC_LIB)

@@ -55,8 +55,14 @@ void difftest_set_skip() {
   is_skip_ref = 1;
 }
 
+void flash_read(int32_t addr, int32_t *data) { assert(0); }
+void mrom_read(int32_t addr, int32_t *data) {
+  uint32_t map_addr = (uint32_t)addr + 0x60000000;  // 0x20000000 -> mapping 0x80000000
+  *data = vaddr_read(map_addr, 4);
+}
+
 /* Interface */
- __EXPORT int npc_get_trap_flag() {
+__EXPORT int npc_get_trap_flag() {
   return trap_flag;
 }
 
