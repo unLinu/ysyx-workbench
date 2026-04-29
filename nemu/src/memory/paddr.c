@@ -13,6 +13,7 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include "common.h"
 #include "macro.h"
 #include <memory/host.h>
 #include <memory/paddr.h>
@@ -22,11 +23,30 @@
 #if   defined(CONFIG_PMEM_MALLOC)
 static uint8_t *pmem = NULL;
 #else // CONFIG_PMEM_GARRAY
-static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
+static uint8_t pmem[MSIZE] PG_ALIGN = {};
 #endif
 
-uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }
-paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }
+const pmem_region_t pmem_table[] = {
+  {"mrom", MROM_LEFT, MROM_RIGHT, 0, false},
+  {"sram", SRAM_LEFT, SRAM_RIGHT, CONFIG_MROM_SIZE, true}
+};
+
+const pmem_region_t *find_pmem_region(paddr_t addr) {
+  for (int i = 0; i < ARRLEN(pmem_table); i++) {
+    if (addr >= pmem_table[i].start && addr <= pmem_table[i].end)
+      return &pmem_table[i];
+  }
+  return NULL;
+}
+
+uint8_t* guest_to_host(paddr_t paddr) {
+  const pmem_region_t *r = find_pmem_region(paddr);
+  return pmem + r->offset + paddr - r->start;
+}
+
+paddr_t host_to_guest(uint8_t *haddr) {
+  assert(0);
+}
 
 static word_t pmem_read(paddr_t addr, int len) {
   word_t ret = host_read(guest_to_host(addr), len);
@@ -38,8 +58,8 @@ static void pmem_write(paddr_t addr, int len, word_t data) {
 }
 
 static void out_of_bound(paddr_t addr) {
-  panic("address = " FMT_PADDR " is out of bound of pmem [" FMT_PADDR ", " FMT_PADDR "] at pc = " FMT_WORD,
-      addr, PMEM_LEFT, PMEM_RIGHT, cpu.pc);
+  panic("address = " FMT_PADDR " is out of bound of pmem at pc = " FMT_WORD,
+      addr, cpu.pc);
 }
 
 void init_mem() {
@@ -47,8 +67,10 @@ void init_mem() {
   pmem = malloc(CONFIG_MSIZE);
   assert(pmem);
 #endif
-  IFDEF(CONFIG_MEM_RANDOM, memset(pmem, rand(), CONFIG_MSIZE));
-  Log("physical memory area [" FMT_PADDR ", " FMT_PADDR "]", PMEM_LEFT, PMEM_RIGHT);
+  IFDEF(CONFIG_MEM_RANDOM, memset(pmem, rand(), MSIZE));
+  for (int i = 0; i < ARRLEN(pmem_table); i++) {
+    Log("physical memory area %s [" FMT_PADDR ", " FMT_PADDR "]", pmem_table[i].name, pmem_table[i].start, pmem_table[i].end);
+  }
 }
 
 word_t paddr_read(paddr_t addr, int len) {

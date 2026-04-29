@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #endif
 
-#if CONFIG_MBASE + CONFIG_MSIZE > 0x100000000ul
+#if CONFIG_MROM_SIZE + CONFIG_SRAM_SIZE > 0x100000000ul // HACK:
 #define PMEM64 1
 #endif
 
