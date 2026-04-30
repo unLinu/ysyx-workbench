@@ -10,23 +10,24 @@ SECTIONS {
     *(entry)
     *(.text*)
   } > mrom
-  etext = .;
-  _etext = .;
   .rodata : {
     *(.rodata*)
   } > mrom
   .data : {
+  _data_start = .;
     *(.data*)
-  } > mrom
-  edata = .;
-  _data = .;
-  .bss : {
+    *(.sdata*)
+  _data_end = .;
+  } > sram AT > mrom
+  _data_load = LOADADDR(.data);
+  .bss (NOLOAD) : {
 	_bss_start = .;
     *(.bss*)
     *(.sbss*)
     *(.scommon)
-  } > mrom
-  . = ORIGIN(sram);
+  _bss_end = .;
+  } > sram
+  . = ALIGN(4);
   _heap_start = .;
   _heap_end = _heap_start + 4K;
   _stack_pointer = ORIGIN(sram) + LENGTH(sram);

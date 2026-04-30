@@ -23,6 +23,12 @@ bind npc_wbu dpi_probe_wbu u_dpi_probe_wbu (
   .wbu_commit_valid_i ( commit_valid_o  )
 );
 
+bind npc_lsu probe_lsu u_probe_lsu (
+  .clk       ( clk                ),
+  .req_done  ( req_done           ),
+  .req_addr  ( m_mem_if.req_addr  )
+);
+
 bind axi4_master probe_axi_master u_probe_axi_master (
   // Inputs
   .bvalid    ( m_axi_if.bvalid  ),

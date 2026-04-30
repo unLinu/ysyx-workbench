@@ -75,7 +75,6 @@ module npc_lsu import ctrl_pkg::*; (
   // Request Channel
   assign  req_done = m_mem_if.req_valid & m_mem_if.req_ready                ;
   assign  m_mem_if.req_addr  = rx_data.alu_res                              ;
-  assign  m_mem_if.req_data  = rx_data.rs2_data                             ;
   assign  m_mem_if.req_is_write = rx_data.mem_wr_en & rx_if.valid           ;
   assign  m_mem_if.req_valid = rx_if.valid &
                                (rx_data.mem_wr_en | rx_data.mem_rd_en)      ;
@@ -110,6 +109,27 @@ module npc_lsu import ctrl_pkg::*; (
     end
   end
 
+  always_comb begin
+    m_mem_if.req_data = '0;
+    unique case (rx_data.st_type)
+      ST_TYPE_B: begin
+        unique case (rx_data.alu_res[1:0])
+          2'b00: m_mem_if.req_data = {24'd0, rx_data.rs2_data[7:0]       }  ;
+          2'b01: m_mem_if.req_data = {16'd0, rx_data.rs2_data[7:0],  8'd0}  ;
+          2'b10: m_mem_if.req_data = { 8'd0, rx_data.rs2_data[7:0], 16'd0}  ;
+          2'b11: m_mem_if.req_data = {       rx_data.rs2_data[7:0], 24'd0}  ;
+        endcase
+      end
+      ST_TYPE_H: begin
+        unique case (rx_data.alu_res[1])
+          1'b0: m_mem_if.req_data = {16'd0, rx_data.rs2_data[15:0]}          ;
+          1'b1: m_mem_if.req_data = {rx_data.rs2_data[15:0], 16'd0}          ;
+        endcase
+      end
+      ST_TYPE_W: m_mem_if.req_data = rx_data.rs2_data                         ;
+    endcase
+  end
+
   // Response Channel
   assign  rsp_done = m_mem_if.rsp_valid & m_mem_if.rsp_ready                 ;
   assign  m_mem_if.rsp_ready = (state == LS_WAIT_RESP)                       ;
@@ -138,11 +158,35 @@ module npc_lsu import ctrl_pkg::*; (
   always_comb begin
     mem_rdata = `XLEN'd0                                                              ;
     unique case (rx_data.ld_type)
-      LD_TYPE_B:  mem_rdata = {{24{m_mem_if.rsp_data[7]}}, m_mem_if.rsp_data[7:0]}    ;
-      LD_TYPE_H:  mem_rdata = {{16{m_mem_if.rsp_data[15]}}, m_mem_if.rsp_data[15:0]}  ;
+      LD_TYPE_B: begin
+        unique case (rx_data.alu_res[1:0])
+          2'b00: mem_rdata = {{24{m_mem_if.rsp_data[7]}}, m_mem_if.rsp_data[7:0]}     ;
+          2'b01: mem_rdata = {{24{m_mem_if.rsp_data[15]}}, m_mem_if.rsp_data[15:8]}   ;
+          2'b10: mem_rdata = {{24{m_mem_if.rsp_data[23]}}, m_mem_if.rsp_data[23:16]}  ;
+          2'b11: mem_rdata = {{24{m_mem_if.rsp_data[31]}}, m_mem_if.rsp_data[31:24]}  ;
+        endcase
+      end
+      LD_TYPE_H: begin
+        unique case (rx_data.alu_res[1])
+          1'b0: mem_rdata = {{16{m_mem_if.rsp_data[15]}}, m_mem_if.rsp_data[15:0]}    ;
+          1'b1: mem_rdata = {{16{m_mem_if.rsp_data[31]}}, m_mem_if.rsp_data[31:16]}   ;
+        endcase
+      end
       LD_TYPE_W:  mem_rdata = m_mem_if.rsp_data                                       ;
-      LD_TYPE_BU: mem_rdata = {24'd0, m_mem_if.rsp_data[7:0]}                         ;
-      LD_TYPE_HU: mem_rdata = {16'd0, m_mem_if.rsp_data[15:0]}                        ;
+      LD_TYPE_BU: begin
+        unique case (rx_data.alu_res[1:0])
+          2'b00: mem_rdata = {24'd0, m_mem_if.rsp_data[7:0]}                          ;
+          2'b01: mem_rdata = {24'd0, m_mem_if.rsp_data[15:8]}                         ;
+          2'b10: mem_rdata = {24'd0, m_mem_if.rsp_data[23:16]}                        ;
+          2'b11: mem_rdata = {24'd0, m_mem_if.rsp_data[31:24]}                        ;
+        endcase
+      end
+      LD_TYPE_HU: begin
+        unique case (rx_data.alu_res[1])
+          1'b0: mem_rdata = {16'd0, m_mem_if.rsp_data[15:0]}                          ;
+          1'b1: mem_rdata = {16'd0, m_mem_if.rsp_data[31:16]}                         ;
+        endcase
+      end
       default: ld_type_err: assert(0) else $fatal(1, "Invalid ld_type!")              ;
     endcase
   end
