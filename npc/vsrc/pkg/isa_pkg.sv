@@ -1,7 +1,7 @@
 `include "npc_defines.svh"
 package isa_pkg;
   // parameter
-  localparam PC_RST      = `XLEN'h2000_0000  ;
+  localparam PC_RST      = `XLEN'h3000_0000  ;
 
   localparam OPCODE_R    = 7'h33             ;
   localparam OPCODE_I    = 7'h13             ;

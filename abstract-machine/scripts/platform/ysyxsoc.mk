@@ -1,6 +1,7 @@
 AM_SRCS := platform/ysyxsoc/trm.c \
            platform/ysyxsoc/ioe/ioe.c \
-           platform/ysyxsoc/ioe/uart.c
+           platform/ysyxsoc/ioe/uart.c \
+           platform/ysyxsoc/ioe/timer.c
 
 CFLAGS    += -fdata-sections -ffunction-sections
 CFLAGS    += -I$(AM_HOME)/am/src/platform/ysyxsoc/include

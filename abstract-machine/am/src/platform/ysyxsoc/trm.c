@@ -1,4 +1,5 @@
 #include <am.h>
+#include <stdint.h>
 #include <ysyxsoc.h>
 #include <klib.h>
 
@@ -28,7 +29,15 @@ void halt(int code) {
   while (1);
 }
 
-void _trm_init() {
+void _trm_init(uint32_t mvendorid, uint32_t marchid) {
+  ioe_init();
+  putstr("Welcome to ");
+  for (int i = 3; i >= 0; i--)
+    putch((char)(mvendorid >> (8 * i)));
+  for (uint32_t d = 10000000; d; d /= 10)
+    putch('0' + (marchid / d) % 10);
+  putstr(" CPU!\n");
+
   int ret = main(mainargs);
   halt(ret);
 }

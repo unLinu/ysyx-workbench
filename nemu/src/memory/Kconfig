@@ -1,13 +1,5 @@
 menu "Memory Configuration"
 
-config MROM_BASE
-  hex "MROM base address"
-  default 0x20000000
-
-config MROM_SIZE
-  hex "MROM size"
-  default 0x1000  # 4KB
-
 config SRAM_BASE
   hex "SRAM base address"
   default 0x0f000000
@@ -15,6 +7,14 @@ config SRAM_BASE
 config SRAM_SIZE
   hex "SRAM size"
   default 0x2000  # 8KB
+
+config FLASH_BASE
+  hex "Flash base address"
+  default 0x30000000
+
+config FLASH_SIZE
+  hex "Flash size"
+  default 0x10000000 # 256MB
 
 config PC_RESET_OFFSET
   hex "Offset of reset vector from the base of memory"

@@ -120,7 +120,7 @@ __EXPORT void npc_exec_once(uint32_t *inst, uint32_t *snpc, uint32_t *dnpc) {
   static int timeout_cycle = 0;
   do {
   #ifdef CONFIG_TIMEOUT_EXIT
-    if (timeout_cycle++ > 200) {
+    if (timeout_cycle++ > CONFIG_TIMEOUT_EXIT_MAX_CYCLE) {
       void npc_delete();
       npc_delete();
       panic("NPC execution timeout at PC = 0x%08x", *snpc - 4);

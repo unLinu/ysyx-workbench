@@ -1,5 +1,6 @@
 #include "common.h"
 #include "cpu/difftest.h"
+#include "difftest-def.h"
 #include "isa.h"
 #include <cpu/cpu.h>
 #include <cpu/decode.h>
@@ -66,7 +67,7 @@ int isa_exec_once(Decode *s) {
   else
     timeout_cnt = 0;
   last_pc = s->pc;
-  if (timeout_cnt > 200) {
+  if (timeout_cnt > CONFIG_TIMEOUT_EXIT_MAX_CYCLE) {
     printf(ANSI_FMT("NEMU execution timeout!" , ANSI_FG_RED) "\n");
     set_nemu_state(NEMU_ABORT, s->pc, -1);
   }

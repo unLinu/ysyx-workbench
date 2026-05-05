@@ -31,7 +31,8 @@
 #include <stdlib.h>
 #endif
 
-#if CONFIG_MROM_SIZE + CONFIG_SRAM_SIZE > 0x100000000ul // HACK:
+#if CONFIG_MROM_SIZE + CONFIG_SRAM_SIZE + CONFIG_FLASH_SIZE > 0x100000000ul 
+// HACK: if the total physical memory size exceeds 4GB, we use 64-bit physical address
 #define PMEM64 1
 #endif
 

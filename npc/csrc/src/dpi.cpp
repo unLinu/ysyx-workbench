@@ -25,7 +25,21 @@ void difftest_set_skip() {
   is_skip_ref = 1;
 }
 
-void flash_read(int32_t addr, int32_t *data) { assert(0); }
+// TEST: for test only
+// uint32_t flash[0x100000] = {
+//   0x100007b7, // lui  a5, 0x10000
+//   0x04100713, // li   a4, 'A'
+//   0x00e78023, // sb   a4, 0(a5)
+//   0x00a00713, // li   a4, '\n'
+//   0x00e78023, // sb   a4, 0(a5)
+//   0x00000513, // li   a0, 0
+//   0x00100073  // ebreak
+// };
+void flash_read(int32_t addr, int32_t *data) {
+  uint32_t map_addr = (uint32_t)addr + 0x30000000;
+  *data = vaddr_read(map_addr, 4);
+}
+
 void mrom_read(int32_t addr, int32_t *data) {
   uint32_t map_addr = (uint32_t)addr & ~0x3u;
   *data = vaddr_read(map_addr, 4);

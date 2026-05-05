@@ -37,11 +37,13 @@ module npc_csr import ctrl_pkg::*; (
   // Read CSR
   always_comb begin
     unique case (csr_addr_i)
-      MSTATUS: csr_data_o = csr.mstatus           ;
-      MEPC   : csr_data_o = csr.mepc              ;
-      MCAUSE : csr_data_o = csr.mcause            ;
-      MTVEC  : csr_data_o = csr.mtvec             ;
-      default: csr_data_o = `XLEN'd0              ;
+      MVENDORID: csr_data_o = 32'h79737978        ;   // ASCII: ysyx
+      MARCHID:   csr_data_o = 32'd25110273        ;
+      MSTATUS:   csr_data_o = csr.mstatus         ;
+      MEPC   :   csr_data_o = csr.mepc            ;
+      MCAUSE :   csr_data_o = csr.mcause          ;
+      MTVEC  :   csr_data_o = csr.mtvec           ;
+      default:   csr_data_o = `XLEN'd0            ;
     endcase
   end
 
@@ -75,7 +77,8 @@ module npc_csr import ctrl_pkg::*; (
         MEPC   : csr.mepc    <= csr_data  ;
         MCAUSE : csr.mcause  <= csr_data  ;
         MTVEC  : csr.mtvec   <= csr_data  ;
-        default: csr_addr_wr_err: assert(0) else $fatal(1, "Unsupported CSR access!");
+        default: csr_addr_wr_err: assert(csr_addr_i == MVENDORID || csr_addr_i == MARCHID)
+                                  else $fatal(1, "Unsupported CSR access!");
       endcase
     end
   end

@@ -231,10 +231,23 @@ endchoice
 
 endif
 
-config TIMEOUT_EXIT
+menuconfig TIMEOUT_EXIT
   depends on TRACE && ENGINE_NPC
   bool "Enable timeout exit."
   default y
+  help
+    Enable timeout exit and configure timeout threshold.
+
+if TIMEOUT_EXIT
+
+config TIMEOUT_EXIT_MAX_CYCLE
+  int "MAX timeout cycle"
+  default 500
+  range 1 1000
+  help
+    Maximum cycles without progress before timeout exit is triggered.
+
+endif
 
 config ITRACE_COND
   depends on ITRACE

@@ -39,7 +39,7 @@ package ctrl_pkg;
   } br_type_e;
   
   typedef enum logic [11:0] {
-    MSTATUS = 12'h300, MEPC = 12'h341, MCAUSE = 12'h342, MTVEC = 12'h305
+    MVENDORID = 12'hf11, MARCHID = 12'hf12, MSTATUS = 12'h300, MEPC = 12'h341, MCAUSE = 12'h342, MTVEC = 12'h305
   } csr_addr_e;
   
   typedef enum logic [0:0] {
