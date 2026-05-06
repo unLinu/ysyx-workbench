@@ -30,6 +30,10 @@ static void restart() {
   /* Set the initial program counter. */
   cpu.pc = RESET_VECTOR;
 
+  /* Set the initial CSRs */
+  cpu.mvendorid = 0x79737978; // "ysyx"
+  cpu.marchid = 25110273;
+
   /* The zero register is always 0. */
   cpu.gpr[0] = 0;
 }

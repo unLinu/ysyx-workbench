@@ -31,16 +31,18 @@ static inline const char* reg_name(int idx) {
 }
 
 enum {
-  MSTATUS = 0x300, MEPC = 0x341, MCAUSE = 0x342, MTVEC = 0x305
+  MVENDORID = 0xf11, MARCHID = 0xf12, MSTATUS = 0x300, MEPC = 0x341, MCAUSE = 0x342, MTVEC = 0x305
 };
 
 #define csr(idx) (*({ \
   word_t *_csr_ptr = NULL; \
-  switch (idx) { \
+  switch (idx & 0xfff) { \
     case MSTATUS: _csr_ptr = &cpu.mstatus; break; \
     case MEPC:    _csr_ptr = &cpu.mepc;    break; \
     case MCAUSE:  _csr_ptr = &cpu.mcause;  break; \
     case MTVEC:   _csr_ptr = &cpu.mtvec;   break; \
+    case MVENDORID: _csr_ptr = &cpu.mvendorid; break; \
+    case MARCHID:   _csr_ptr = &cpu.marchid;   break; \
     default: panic("unimplemented csr idx = " FMT_WORD, idx); \
   } \
   _csr_ptr; \

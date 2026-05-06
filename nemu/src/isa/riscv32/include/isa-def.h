@@ -23,6 +23,7 @@ typedef struct {
   vaddr_t pc;
 
   // CSR
+  word_t mvendorid, marchid;
   word_t mcause, mstatus, mepc, mtvec;
 } MUXDEF(CONFIG_RV64, riscv64_CPU_state, riscv32_CPU_state);
 
