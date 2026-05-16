@@ -36,13 +36,23 @@ void difftest_set_skip() {
 //   0x00100073  // ebreak
 // };
 void flash_read(int32_t addr, int32_t *data) {
-  uint32_t map_addr = (uint32_t)addr + 0x30000000;
+  uint32_t map_addr = (uint32_t)addr + CONFIG_FLASH_BASE;
   *data = vaddr_read(map_addr, 4);
 }
 
 void mrom_read(int32_t addr, int32_t *data) {
   uint32_t map_addr = (uint32_t)addr & ~0x3u;
   *data = vaddr_read(map_addr, 4);
+}
+
+char psram_read(int add) {
+  uint32_t map_addr = (uint32_t)add + CONFIG_PSRAM_BASE;
+  return (char)vaddr_read(map_addr, 1);
+}
+
+void psram_write(int add, char data) {
+  uint32_t map_addr = (uint32_t)add + CONFIG_PSRAM_BASE;
+  vaddr_write(map_addr, 1, (uint32_t)data);
 }
 
 /* Interface */

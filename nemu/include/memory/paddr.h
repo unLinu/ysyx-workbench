@@ -22,7 +22,9 @@
 #define SRAM_RIGHT    ((paddr_t)CONFIG_SRAM_BASE + CONFIG_SRAM_SIZE - 1)
 #define FLASH_LEFT    ((paddr_t)CONFIG_FLASH_BASE)
 #define FLASH_RIGHT   ((paddr_t)CONFIG_FLASH_BASE + CONFIG_FLASH_SIZE - 1)
-#define MSIZE         (CONFIG_SRAM_SIZE + CONFIG_FLASH_SIZE)
+#define PSRAM_LEFT    ((paddr_t)CONFIG_PSRAM_BASE)
+#define PSRAM_RIGHT   ((paddr_t)CONFIG_PSRAM_BASE + CONFIG_PSRAM_SIZE - 1)
+#define MSIZE         (CONFIG_SRAM_SIZE + CONFIG_FLASH_SIZE + CONFIG_PSRAM_SIZE)
 #define RESET_VECTOR  (CONFIG_FLASH_BASE + CONFIG_PC_RESET_OFFSET)
 
 typedef struct {
@@ -46,8 +48,12 @@ static inline bool in_flash(paddr_t addr) {
   return addr >= FLASH_LEFT && addr <= FLASH_RIGHT;
 }
 
+static inline bool in_psram(paddr_t addr) {
+  return addr >= PSRAM_LEFT && addr <= PSRAM_RIGHT;
+}
+
 static inline bool in_pmem(paddr_t addr) {
-  return in_sram(addr) || in_flash(addr);
+  return in_sram(addr) || in_flash(addr) || in_psram(addr);
 }
 
 const pmem_region_t *find_paddr_region(paddr_t addr);

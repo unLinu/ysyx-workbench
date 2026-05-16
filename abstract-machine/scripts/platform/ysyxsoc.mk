@@ -1,4 +1,5 @@
 AM_SRCS := platform/ysyxsoc/trm.c \
+           platform/ysyxsoc/bootloader.c \
            platform/ysyxsoc/ioe/ioe.c \
            platform/ysyxsoc/ioe/uart.c \
            platform/ysyxsoc/ioe/timer.c

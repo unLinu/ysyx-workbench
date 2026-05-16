@@ -1,15 +1,7 @@
 #include <am.h>
-#include <stdint.h>
 #include <ysyxsoc.h>
-#include <klib.h>
 
-extern char _heap_start;
-extern char _heap_end;
-extern char _data_load;
-extern char _data_start;
-extern char _data_end;
-extern char _bss_start;
-extern char _bss_end;
+extern char _heap_start, _heap_end;
 
 int main(const char *args);
 
@@ -40,9 +32,4 @@ void _trm_init(uint32_t mvendorid, uint32_t marchid) {
 
   int ret = main(mainargs);
   halt(ret);
-}
-
-void _boot_loader() {
-  memcpy(&_data_start, &_data_load, &_data_end - &_data_start);
-  memset(&_bss_start, 0, &_bss_end - &_bss_start);
 }

@@ -14,7 +14,19 @@ config FLASH_BASE
 
 config FLASH_SIZE
   hex "Flash size"
-  default 0x10000000 # 256MB
+  default 0x1000000 # 16MB
+
+config PSRAM_BASE
+  hex "PSRAM base address"
+  default 0x80000000
+
+config PSRAM_SIZE
+  hex "PSRAM size"
+  default 0x400000 # 4MB
+
+config QPI_MODE
+  bool "Enable QPI mode"
+  default y
 
 config PC_RESET_OFFSET
   hex "Offset of reset vector from the base of memory"

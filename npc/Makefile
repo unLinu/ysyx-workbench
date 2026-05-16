@@ -30,6 +30,7 @@ VERILATOR_FLAGS += --lib-create npc
 VERILATOR_FLAGS += -F $(NPC_VSRCS)/filelist.f $(NPC_CSRCS) $(YSYXSOC_VSRCS)
 VERILATOR_FLAGS += --timescale "1ns/1ns" --no-timing
 VERILATOR_FLAGS += --autoflush
+VERILATOR_FLAGS += $(if $(CONFIG_QPI_MODE), -DPSRAM_QPI_MODE)
 
 verilating: $(VSRCS)
 	@mkdir -p $(OBJ_DIR)

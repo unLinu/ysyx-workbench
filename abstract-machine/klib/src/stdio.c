@@ -5,9 +5,11 @@
 
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 
+#define BUF_SIZE 256
+
 int printf(const char *fmt, ...) {
   int ret = 0;
-  char out[1024];
+  char out[BUF_SIZE];
   va_list ap;
   va_start(ap, fmt);
   ret = vsprintf(out, fmt, ap);
@@ -21,7 +23,7 @@ void fill_buf(char *out, size_t *len, int num, int width, int base) {
   if (num < 0 && base == 10) {out[(*len)++] = '-'; val = -(unsigned long)num;}
   else {val = num;}
 
-  char buf[1024];
+  char buf[BUF_SIZE];
   int num_len = 0;
   do {
     buf[num_len++] = (val % base) + (val % base < 10 ? '0' : 'a' - 10);

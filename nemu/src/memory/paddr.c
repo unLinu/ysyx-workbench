@@ -28,7 +28,8 @@ static uint8_t pmem[MSIZE] PG_ALIGN = {};
 
 const pmem_region_t pmem_table[] = {
   {"flash", FLASH_LEFT, FLASH_RIGHT, 0, false},
-  {"sram", SRAM_LEFT, SRAM_RIGHT, CONFIG_FLASH_SIZE, true} // NOTE: SRAM is for difftest
+  {"sram", SRAM_LEFT, SRAM_RIGHT, CONFIG_FLASH_SIZE, true}, // NOTE: SRAM is for difftest
+  {"psram", PSRAM_LEFT, PSRAM_RIGHT, CONFIG_FLASH_SIZE + CONFIG_SRAM_SIZE, true}
 };
 
 const pmem_region_t *find_pmem_region(paddr_t addr) {
